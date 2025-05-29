@@ -1,0 +1,21 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ survey.title }}</h2>
+<p>{{ question.text }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+    {% if question.question_type == 'TEXT' %}
+        <textarea name="answer" required></textarea>
+    {% elif question.question_type == 'CHOICE' %}
+        {% for choice in question.choices.all %}
+            <div>
+                <input type="radio" name="answer" id="choice{{ forloop.counter }}" value="{{ choice.id }}" required>
+                <label for="choice{{ forloop.counter }}">{{ choice.text }}</label>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <button type="submit">Next</button>
+</form>
+{% endblock %}

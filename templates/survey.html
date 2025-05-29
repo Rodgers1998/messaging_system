@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Send Survey - SHOFCO{% endblock %}
+
+{% block content %}
+<h1>Send a Survey</h1>
+
+<form method="POST" action="{% url 'surveys:survey_home' %}">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="title" class="form-label">Survey Title</label>
+    <input type="text" name="title" id="title" class="form-control" required />
+  </div>
+  <div class="mb-3">
+    <label for="content" class="form-label">Survey Content</label>
+    <textarea name="content" id="content" class="form-control" rows="4" required></textarea>
+  </div>
+  <div class="mb-3">
+    <label for="channel" class="form-label">Channel</label>
+    <select name="channel" id="channel" class="form-select" required>
+      <option value="">Select channel</option>
+      <option value="WHATSAPP">WhatsApp</option>
+      <option value="EMAIL">Email</option>
+    </select>
+  </div>
+  <div class="mb-3">
+    <label for="recipient_ids" class="form-label">Recipient IDs (comma-separated)</label>
+    <input type="text" name="recipient_ids" id="recipient_ids" class="form-control" required />
+  </div>
+  <button type="submit" class="btn btn-primary">Send Survey</button>
+</form>
+{% endblock %}

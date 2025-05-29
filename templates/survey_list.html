@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Available Surveys</h2>
+<ul>
+    {% for survey in surveys %}
+    <li><a href="{% url 'surveys:take_survey' survey.id %}">{{ survey.title }}</a></li>
+    {% empty %}
+    <li>No surveys available.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

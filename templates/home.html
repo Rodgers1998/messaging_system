@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SHOFCO{% endblock %}
+
+{% block content %}
+<h1>Dashboard - Message Monitoring</h1>
+
+<p>Total messages: {{ total_messages }}</p>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Recipient</th>
+      <th>Content</th>
+      <th>Channel</th>
+      <th>Status</th>
+      <th>Scheduled For</th>
+      <th>Sent At</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for message in messages %}
+      <tr>
+        <td>
+          {% if message.recipient.name %}
+            {{ message.recipient.name }}
+          {% else %}
+            {{ message.recipient.phone_number }}
+          {% endif %}
+        </td>
+        <td>{{ message.content }}</td>
+        <td>{{ message.channel }}</td>
+        <td>{{ message.status }}</td>
+        <td>{{ message.scheduled_for|default:"-" }}</td>
+        <td>{{ message.sent_at|default:"-" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">No messages found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="pagination">
+  <span>
+    Page {{ messages.number }} of {{ messages.paginator.num_pages }}.
+  </span>
+
+  {% if messages.has_previous %}
+    <a href="?page={{ messages.previous_page_number }}">Previous</a>
+  {% endif %}
+
+  {% if messages.has_next %}
+    <a href="?page={{ messages.next_page_number }}">Next</a>
+  {% endif %}
+</div>
+
+{% endblock %}
