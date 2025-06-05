@@ -1,0 +1,22 @@
+{
+  "name": "SHOFCO Messaging",
+  "short_name": "SHOFCO",
+  "start_url": "/messaging/",
+  "scope": "/messaging/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
