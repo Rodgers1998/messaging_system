@@ -11,7 +11,7 @@ load_dotenv(BASE_DIR / '.env')
 # === Security ===
 SECRET_KEY = 'django-insecure-fwm7x*zvuy#5xp+b^h5ld+xr)6qwl2n6dy6=pt#q!h$*+f3k3q'
 DEBUG = True  # Set to False in production!
-ALLOWED_HOSTS = ['messaging-system-bzfq.onrender.com']
+ALLOWED_HOSTS = ['messaging-system-bzfq.onrender.com','localhost', '127.0.0.1']
 
 # === Installed Applications ===
 INSTALLED_APPS = [
@@ -33,6 +33,7 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'crispy_forms',
+    'crispy_bootstrap5',
 ]
 
 # === Middleware ===
@@ -101,4 +102,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # === Crispy Forms ===
-CRISPY_TEMPLATE_PACK = 'uni_form'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+LOGIN_URL = 'messaging:login'
+
+LOGIN_REDIRECT_URL = 'messaging:dashboard_home'  # or wherever users go after login
+LOGOUT_REDIRECT_URL = 'messaging:login' 

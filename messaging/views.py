@@ -37,7 +37,7 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    return redirect('login')
+    return redirect('messaging:login')
 
 
 # ---------- Dashboard View ----------
