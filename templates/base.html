@@ -1,29 +1,59 @@
+{% load static %}
+{% load crispy_forms_tags %}
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}SHOFCO Messaging{% endblock %}</title>
+
+  <!-- Favicon (.ico) -->
+  <link rel="icon" href="{% static 'icons/favicon.ico' %}" type="image/x-icon">
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#0d6efd" />
+  <link rel="icon" href="{% static 'icons/icon-192x192.png' %}">
+
+  <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register("{% static 'service-worker.js' %}")
+          .then(reg => console.log('Service Worker registered:', reg.scope))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
       <a class="navbar-brand" href="{% url 'dashboard_home' %}">SHOFCO</a>
-      <div class="collapse navbar-collapse">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_home' %}active{% endif %}" href="{% url 'dashboard_home' %}">Dashboard</a>
           </li>
           <li class="nav-item">
-             <a class="nav-link {% if request.resolver_match.namespace == 'messaging' and request.resolver_match.url_name == 'messages_home' %}active{% endif %}" href="{% url 'messaging:messages_home' %}">Messaging</a>
+            <a class="nav-link {% if request.resolver_match.namespace == 'messaging' and request.resolver_match.url_name == 'messages_home' %}active{% endif %}" href="{% url 'messaging:messages_home' %}">Messaging</a>
           </li>
-          
-
-
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'survey_home' and request.resolver_match.namespace == 'surveys' %}active{% endif %}" href="{% url 'surveys:survey_home' %}">Surveys</a>
-
           </li>
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <!-- Install App button will be added here via JS -->
         </ul>
       </div>
     </div>
@@ -33,5 +63,43 @@
     {% block content %}
     {% endblock %}
   </div>
+
+  <!-- Install App Script -->
+  <script>
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      const installButton = document.createElement('button');
+      installButton.textContent = 'Install App';
+      installButton.className = 'btn btn-outline-light ms-2';
+
+      const navbarRight = document.querySelector('.navbar-nav.ms-auto');
+      if (navbarRight) {
+        const installItem = document.createElement('li');
+        installItem.className = 'nav-item';
+        installItem.appendChild(installButton);
+        navbarRight.appendChild(installItem);
+      }
+
+      installButton.addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choice) => {
+          if (choice.outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+          } else {
+            console.log('User dismissed the install prompt');
+          }
+          deferredPrompt = null;
+          installButton.style.display = 'none';
+        });
+      });
+    });
+  </script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
