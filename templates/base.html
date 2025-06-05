@@ -22,11 +22,11 @@
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
 
-  <!-- Service Worker Registration with scope -->
+  <!-- Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register("{% static 'service-worker.js' %}", { scope: '/messaging/' })
+        navigator.serviceWorker.register("{% static 'messaging/service-worker.js' %}", { scope: '/messaging/' })
           .then(reg => console.log('Service Worker registered with scope:', reg.scope))
           .catch(err => console.error('Service Worker registration failed:', err));
       });
@@ -77,9 +77,8 @@
     {% endblock %}
   </div>
 
-  <!-- PWA Install Prompt Script -->
+  <!-- PWA Install Prompt -->
   <script>
-    console.log('Checking PWA install readiness...');
     let deferredPrompt;
 
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -100,8 +99,8 @@
 
       installButton.addEventListener('click', () => {
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choice) => {
-          if (choice.outcome === 'accepted') {
+        deferredPrompt.userChoice.then(choiceResult => {
+          if (choiceResult.outcome === 'accepted') {
             console.log('User accepted the install prompt');
           } else {
             console.log('User dismissed the install prompt');
@@ -113,7 +112,7 @@
     });
   </script>
 
-  <!-- Bootstrap JS -->
+  <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,9 +1,8 @@
 const CACHE_NAME = 'shofco-messaging-v1';
 const urlsToCache = [
-  '/',
+  '/messaging/',  // Make sure this matches your manifest start_url and scope
   '/static/icons/icon-192x192.png',
   '/static/icons/icon-512x512.png',
-  '/static/css/bootstrap.min.css', // example, if you serve locally
   // Add any other static assets you want cached here
 ];
 
@@ -22,7 +21,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Activated');
   event.waitUntil(
-    caches.keys().then(cacheNames => 
+    caches.keys().then(cacheNames =>
       Promise.all(
         cacheNames.filter(name => name !== CACHE_NAME)
           .map(name => caches.delete(name))
@@ -35,9 +34,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        // Return cached resource if available, else fetch from network
-        return response || fetch(event.request);
-      })
+      .then(response => response || fetch(event.request))
   );
 });
