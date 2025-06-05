@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'campaigns',
     'ivr',
     'dashboard',
+    'crispy_forms',
 ]
 
 MIDDLEWARE = [
@@ -129,6 +130,8 @@ import os
 
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")  # Ensure this directory exists
+CRISPY_TEMPLATE_PACK = 'uni_form'
+
 
 
 
