@@ -26,4 +26,4 @@ def dashboard_home(request):
         'messages': page_obj,  # pass the paginated page object to the template
     }
 
-    return render(request, 'home.html', context)
+    return render(request, 'messaging/home.html', context)
