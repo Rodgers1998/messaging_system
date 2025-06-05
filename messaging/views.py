@@ -44,7 +44,7 @@ def logout_view(request):
 
 @login_required
 def dashboard_home(request):
-    return render(request, "dashboard.html")
+    return render(request, "messaging/home.html")
 
 
 # ---------- Messaging Views ----------
