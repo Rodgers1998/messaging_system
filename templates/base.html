@@ -8,13 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}SHOFCO Messaging{% endblock %}</title>
 
-  <!-- Favicon (.ico) -->
-  <link rel="icon" href="{% static 'icons/favicon.ico' %}" type="image/x-icon">
+  <!-- Favicon (.ico) for browsers -->
+  <link rel="icon" href="{% static 'icons/favicon.ico' %}" type="image/x-icon" />
 
-  <!-- PWA Manifest & Icons -->
+  <!-- Apple touch icon -->
+  <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}" />
+
+  <!-- PWA Manifest & theme color -->
   <link rel="manifest" href="{% static 'manifest.json' %}">
   <meta name="theme-color" content="#0d6efd" />
-  <link rel="icon" href="{% static 'icons/icon-192x192.png' %}">
 
   <!-- PWA Mobile App Capable Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes">
