@@ -45,7 +45,7 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.namespace == 'messaging' and request.resolver_match.url_name == 'dashboard_home' %}active{% endif %}" href="{% url 'messaging:dashboard_home' %}">Dashboard</a>
+            <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="/dashboard/">Dashboard</a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.namespace == 'messaging' and request.resolver_match.url_name == 'messages_home' %}active{% endif %}" href="{% url 'messaging:messages_home' %}">Messaging</a>
