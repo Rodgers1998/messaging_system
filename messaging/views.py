@@ -11,6 +11,7 @@ from beneficiaries.models import Beneficiary
 from messaging.models import Message
 from messaging.services.messaging_service import send_message
 
+
 # ---------- Auth Views ----------
 
 def register_view(request):
@@ -24,6 +25,7 @@ def register_view(request):
         form = RegisterForm()
     return render(request, "messaging/register.html", {"form": form})
 
+
 def login_view(request):
     if request.method == "POST":
         form = AuthenticationForm(data=request.POST)
@@ -34,6 +36,7 @@ def login_view(request):
     else:
         form = AuthenticationForm()
     return render(request, "messaging/login.html", {"form": form})
+
 
 def logout_view(request):
     logout(request)
@@ -52,7 +55,11 @@ def dashboard_home(request):
 @login_required
 def messages_home(request):
     messages_list = Message.objects.all().order_by('-sent_at')[:50]
-    return render(request, 'messages.html', {'messages': messages_list})
+    beneficiaries = Beneficiary.objects.all()  # ✅ Include beneficiaries here too
+    return render(request, 'messages.html', {
+        'messages': messages_list,
+        'beneficiaries': beneficiaries
+    })
 
 
 @login_required
@@ -103,7 +110,11 @@ def send_ui_message(request):
 
     # GET request → Show form with beneficiaries list
     beneficiaries = Beneficiary.objects.all()
-    return render(request, "messaging_form.html", {"beneficiaries": beneficiaries})
+    messages_list = Message.objects.all().order_by('-sent_at')[:50]
+    return render(request, "messages.html", {
+        "beneficiaries": beneficiaries,
+        "messages": messages_list
+    })
 
 
 @login_required

@@ -24,7 +24,7 @@
     <label for="recipients" class="form-label">Select Beneficiaries</label>
     <select name="recipients" id="recipients" class="form-select" multiple required>
       {% for beneficiary in beneficiaries %}
-        <option value="{{ beneficiary.id }}">{{ beneficiary.name }} ({{ beneficiary.phone_number }})</option>
+        <option value="{{ beneficiary.id }}">{{ beneficiary }}</option>
       {% endfor %}
     </select>
     <small class="form-text text-muted">Hold CTRL (or Command on Mac) to select multiple.</small>
