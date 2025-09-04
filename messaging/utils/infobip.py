@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Load environment variables
-INFOBIP_BASE_URL = os.getenv("INFOBIP_BASE_URL")  # e.g. https://your-subdomain.api.infobip.com
+INFOBIP_BASE_URL = os.getenv("INFOBIP_BASE_URL")  # e.g. https://xxxx.api.infobip.com
 INFOBIP_API_KEY = os.getenv("INFOBIP_API_KEY")
 INFOBIP_SENDER_SMS = os.getenv("INFOBIP_SENDER_SMS", "SHOFCO")
 INFOBIP_SENDER_WHATSAPP = os.getenv("INFOBIP_SENDER_WHATSAPP")
@@ -33,12 +33,16 @@ def send_sms_via_infobip(to_phone: str, message_text: str):
 
     response = requests.post(url, headers=headers, json=payload)
 
-    if response.status_code == 200:
+    try:
         data = response.json()
+    except Exception:
+        return False, response.text
+
+    if response.status_code == 200:
         message_id = data.get("messages", [{}])[0].get("messageId", "")
         return True, message_id
     else:
-        return False, response.text
+        return False, data
 
 
 def send_whatsapp_via_infobip(to_phone: str, message_text: str):
@@ -61,12 +65,16 @@ def send_whatsapp_via_infobip(to_phone: str, message_text: str):
 
     response = requests.post(url, headers=headers, json=payload)
 
-    if response.status_code == 200:
+    try:
         data = response.json()
-        message_id = data.get("messages", [{}])[0].get("messageId", "")
+    except Exception:
+        return False, response.text
+
+    if response.status_code == 200:
+        message_id = data.get("messageId", "")
         return True, message_id
     else:
-        return False, response.text
+        return False, data
 
 
 def sync_contact_to_infobip(name: str, phone_number: str):
@@ -80,17 +88,18 @@ def sync_contact_to_infobip(name: str, phone_number: str):
         "Accept": "application/json",
     }
     payload = {
-        "contacts": [{
-            "phoneNumber": phone_number
-        }],
-        "properties": {
-            "firstName": name
-        }
+        "phoneNumbers": [phone_number],
+        "firstName": name,
     }
 
     response = requests.post(url, headers=headers, json=payload)
 
-    if response.status_code in [200, 201]:
-        return response.status_code, response.json()
-    else:
+    try:
+        data = response.json()
+    except Exception:
         return response.status_code, response.text
+
+    if response.status_code in [200, 201]:
+        return response.status_code, data
+    else:
+        return response.status_code, data
