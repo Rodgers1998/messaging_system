@@ -60,20 +60,20 @@ def send_ui_message(request):
     if request.method == "POST":
         content = request.POST.get("content")
         channel = request.POST.get("channel")
-        recipient_ids_raw = request.POST.get("recipient_ids")
+        recipient_ids = request.POST.getlist("recipients")  # ✅ Multiple select
         scheduled_for_raw = request.POST.get("scheduled_for")
 
-        if not all([content, channel, recipient_ids_raw]):
-            messages.error(request, "All fields except scheduled time are required.")
+        if not all([content, channel, recipient_ids]):
+            messages.error(request, "Message content, channel, and recipients are required.")
             return redirect('messaging:messages_home')
 
-        recipient_ids = [rid.strip() for rid in recipient_ids_raw.split(",") if rid.strip().isdigit()]
         beneficiaries = Beneficiary.objects.filter(id__in=recipient_ids)
 
         if not beneficiaries.exists():
             messages.error(request, "No valid beneficiaries found.")
             return redirect('messaging:messages_home')
 
+        # Handle scheduling
         scheduled_for = None
         if scheduled_for_raw:
             try:
@@ -86,6 +86,7 @@ def send_ui_message(request):
                 messages.error(request, "Invalid scheduled time format.")
                 return redirect('messaging:messages_home')
 
+        # Create messages for each beneficiary
         for beneficiary in beneficiaries:
             message = Message.objects.create(
                 recipient=beneficiary,
@@ -94,13 +95,15 @@ def send_ui_message(request):
                 status="PENDING",
                 scheduled_for=scheduled_for
             )
-            if not scheduled_for:
+            if not scheduled_for:  # send immediately if no schedule
                 send_message(message)
 
         messages.success(request, "Messages sent or scheduled successfully.")
         return redirect('messaging:messages_home')
 
-    return redirect('messaging:messages_home')
+    # GET request → Show form with beneficiaries list
+    beneficiaries = Beneficiary.objects.all()
+    return render(request, "messaging_form.html", {"beneficiaries": beneficiaries})
 
 
 @login_required
