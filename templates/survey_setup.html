@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}WhatsApp Survey – SHOFCO{% endblock %}
+
+{% block content %}
+
+<!-- Flash messages -->
+{% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} mb-2" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="row">
+  <!-- Survey Setup / Send -->
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">Start WhatsApp Survey</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{% url 'survey:start' %}">
+          {% csrf_token %}
+
+          <!-- Survey selection -->
+          <div class="mb-3">
+            <label class="form-label" for="survey_id">Select Survey</label>
+            <select class="form-select" id="survey_id" name="survey_id" required>
+              {% for s in surveys %}
+                <option value="{{ s.id }}" {% if s.id == selected_survey.id %}selected{% endif %}>{{ s.title }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Intro / Instructions -->
+          <div class="mb-3">
+            <label class="form-label" for="intro_text">Intro / Instructions</label>
+            <textarea class="form-control" id="intro_text" name="intro_text" rows="3" required>
+👋 Hello, welcome to the SHOFCO WhatsApp Survey.
+
+Please answer the questions below by replying to this chat.
+            </textarea>
+            <small class="text-muted">This message is sent first to each recipient.</small>
+          </div>
+
+          <!-- Dynamic Questions -->
+          <div class="mb-3">
+            <h6>Survey Questions</h6>
+            {% if selected_survey.questions.exists %}
+              {% for q in selected_survey.questions.all %}
+                <div class="mb-2">
+                  <label class="form-label">{{ forloop.counter }}. {{ q.text }}</label>
+                  
+                  {% if q.question_type == "TEXT" %}
+                    <input type="text" class="form-control" name="question_{{ q.id }}" placeholder="Your answer">
+                  {% elif q.question_type == "CHOICE" %}
+                    {% for c in q.choices.all %}
+                      <div class="form-check">
+                        <input class="form-check-input" type="radio" 
+                               name="question_{{ q.id }}" 
+                               id="choice_{{ c.id }}" 
+                               value="{{ c.text }}">
+                        <label class="form-check-label" for="choice_{{ c.id }}">
+                          {{ c.text }}
+                        </label>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="text-muted">No questions found for this survey.</p>
+            {% endif %}
+          </div>
+
+          <!-- Beneficiaries -->
+          <div class="mb-3">
+            <label for="recipients" class="form-label">Select Beneficiaries</label>
+            <select class="form-select" id="recipients" name="recipients" multiple required>
+              {% if beneficiaries %}
+                {% for b in beneficiaries %}
+                  <option value="{{ b.id }}">{{ b }}</option>
+                {% endfor %}
+              {% else %}
+                <option disabled>No beneficiaries found</option>
+              {% endif %}
+            </select>
+            <small class="text-muted">Hold CTRL (Cmd on Mac) to select multiple.</small>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Send Survey</button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#testSend">
+              Send Test to My Number
+            </button>
+          </div>
+
+          <div id="testSend" class="collapse mt-3">
+            <div class="input-group">
+              <span class="input-group-text">+ Country code</span>
+              <input type="text" class="form-control" name="test_msisdn" placeholder="+2547XXXXXXXX">
+              <button class="btn btn-outline-primary" formaction="{% url 'survey:test_send' %}" formmethod="post">Send Test</button>
+            </div>
+            {% csrf_token %}
+            <small class="text-muted d-block mt-1">E.164 format required (e.g., +254712345678).</small>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Responses -->
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0">Recent Survey Responses</h5>
+        <form method="get" class="d-flex" action="">
+          <input type="text" name="q" class="form-control form-control-sm me-2" placeholder="Search phone or name"
+                 value="{{ request.GET.q|default:'' }}">
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Search</button>
+        </form>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Phone</th>
+                <th>Gender</th>
+                <th>Name</th>
+                <th>Step</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if responses %}
+                {% for r in responses %}
+                  {% with gender=None name=None unanswered_count=0 %}
+                    {% for a in r.answers.all %}
+                      {% if "gender" in a.question.text|lower %}
+                        {% with a.answer_text as gender %}{% endwith %}
+                      {% elif "name" in a.question.text|lower %}
+                        {% with a.answer_text as name %}{% endwith %}
+                      {% endif %}
+                      {% if not a.answer_text %}
+                        {% with unanswered_count|add:1 as unanswered_count %}{% endwith %}
+                      {% endif %}
+                    {% endfor %}
+                    <tr>
+                      <td>{{ r.beneficiary.phone_number }}</td>
+                      <td>{{ gender|default:"—" }}</td>
+                      <td>{{ name|default:"—" }}</td>
+                      <td>
+                        {% if unanswered_count == 0 %}✅ Done
+                        {% else %}{{ unanswered_count }} question{% if unanswered_count > 1 %}s{% endif %} left
+                        {% endif %}
+                      </td>
+                      <td>{{ r.submitted_at|date:"Y-m-d H:i"|default:"—" }}</td>
+                    </tr>
+                  {% endwith %}
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="5" class="text-center text-muted py-4">No responses yet.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% if page_obj %}
+      <div class="card-footer d-flex justify-content-between">
+        <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+        <div>
+          {% if page_obj.has_previous %}
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

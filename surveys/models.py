@@ -1,50 +1,56 @@
-# surveys/models.py
 from django.db import models
 from beneficiaries.models import Beneficiary
 
+
 class Survey(models.Model):
+    """A survey definition (e.g. WhatsApp Gender & Name Survey)."""
     title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
 
-class SurveyQuestion(models.Model):
+
+class Question(models.Model):
+    """Questions belonging to a survey."""
     QUESTION_TYPES = [
-        ('TEXT', 'Text'),
-        ('CHOICE', 'Multiple Choice'),
+        ("TEXT", "Text Input"),
+        ("CHOICE", "Multiple Choice"),
     ]
-    survey = models.ForeignKey(Survey, related_name='questions', on_delete=models.CASCADE)
-    text = models.TextField()
-    question_type = models.CharField(max_length=10, choices=QUESTION_TYPES, default='TEXT')
-    order = models.PositiveIntegerField(default=0)
+
+    survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="questions")
+    text = models.CharField(max_length=500)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default="TEXT")
 
     def __str__(self):
-        return f"{self.survey.title} Q{self.order + 1}: {self.text}"
+        return f"{self.survey.title} - {self.text}"
 
-class SurveyChoice(models.Model):
-    question = models.ForeignKey(SurveyQuestion, related_name='choices', on_delete=models.CASCADE)
+
+class Choice(models.Model):
+    """Choices for multiple-choice questions."""
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
     text = models.CharField(max_length=255)
 
     def __str__(self):
         return f"{self.question.text} - {self.text}"
 
-class SurveyResponse(models.Model):
-    survey = models.ForeignKey(Survey, on_delete=models.CASCADE)
-    beneficiary = models.ForeignKey(Beneficiary, on_delete=models.CASCADE)
+
+class Response(models.Model):
+    """A survey response from a beneficiary."""
+    survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="responses")
+    beneficiary = models.ForeignKey(Beneficiary, on_delete=models.CASCADE, related_name="responses")
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Response by {self.beneficiary.name} for {self.survey.title}"
+        return f"Response by {self.beneficiary.name} to {self.survey.title}"
 
-class SurveyAnswer(models.Model):
-    response = models.ForeignKey(SurveyResponse, related_name='answers', on_delete=models.CASCADE)
-    question = models.ForeignKey(SurveyQuestion, on_delete=models.CASCADE)
-    # For TEXT questions
-    text_answer = models.TextField(blank=True, null=True)
-    # For CHOICE questions (store selected choice)
-    choice_answer = models.ForeignKey(SurveyChoice, null=True, blank=True, on_delete=models.SET_NULL)
+
+class Answer(models.Model):
+    """An answer to a specific question in a response."""
+    response = models.ForeignKey(Response, on_delete=models.CASCADE, related_name="answers")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    answer_text = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Answer to Q{self.question.order + 1} by {self.response.beneficiary.name}"
+        return f"{self.question.text} - {self.answer_text}"
