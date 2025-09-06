@@ -11,9 +11,9 @@ INFOBIP_SENDER_SMS = os.getenv("INFOBIP_SENDER_SMS", "SHOFCO")
 INFOBIP_SENDER_WHATSAPP = os.getenv("INFOBIP_SENDER_WHATSAPP")
 
 
-def send_sms_via_infobip(to_phone: str, message_text: str):
+def send_sms_via_infobip(to_phone: str, message_text: str, parameters=None):
     """
-    Send SMS message via Infobip
+    Send SMS message via Infobip with optional parameters (e.g., {{1}})
     """
     url = f"{INFOBIP_BASE_URL}/sms/2/text/advanced"
     headers = {
@@ -21,15 +21,18 @@ def send_sms_via_infobip(to_phone: str, message_text: str):
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
-    payload = {
-        "messages": [
-            {
-                "from": INFOBIP_SENDER_SMS,
-                "destinations": [{"to": to_phone}],
-                "text": message_text,
-            }
-        ]
+
+    message_payload = {
+        "from": INFOBIP_SENDER_SMS,
+        "destinations": [{"to": to_phone}],
+        "text": message_text,
     }
+
+    # ✅ Add parameters if provided
+    if parameters:
+        message_payload["parameters"] = parameters
+
+    payload = {"messages": [message_payload]}
 
     response = requests.post(url, headers=headers, json=payload)
 
@@ -45,9 +48,9 @@ def send_sms_via_infobip(to_phone: str, message_text: str):
         return False, data
 
 
-def send_whatsapp_via_infobip(to_phone: str, message_text: str):
+def send_whatsapp_via_infobip(to_phone: str, message_text: str, parameters=None):
     """
-    Send plain text WhatsApp message via Infobip
+    Send plain text WhatsApp message via Infobip with optional parameters
     """
     url = f"{INFOBIP_BASE_URL}/whatsapp/1/message/text"
     headers = {
@@ -55,12 +58,17 @@ def send_whatsapp_via_infobip(to_phone: str, message_text: str):
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
+
+    content = {"text": message_text}
+
+    # ✅ Add parameters if provided
+    if parameters:
+        content["parameters"] = parameters
+
     payload = {
         "from": INFOBIP_SENDER_WHATSAPP,
         "to": to_phone,
-        "content": {
-            "text": message_text
-        }
+        "content": content,
     }
 
     response = requests.post(url, headers=headers, json=payload)

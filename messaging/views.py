@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -55,7 +55,7 @@ def dashboard_home(request):
 @login_required
 def messages_home(request):
     messages_list = Message.objects.all().order_by('-sent_at')[:50]
-    beneficiaries = Beneficiary.objects.all()  # ✅ Include beneficiaries here too
+    beneficiaries = Beneficiary.objects.all()
     return render(request, 'messages.html', {
         'messages': messages_list,
         'beneficiaries': beneficiaries
@@ -67,7 +67,7 @@ def send_ui_message(request):
     if request.method == "POST":
         content = request.POST.get("content")
         channel = request.POST.get("channel")
-        recipient_ids = request.POST.getlist("recipients")  # ✅ Multiple select
+        recipient_ids = request.POST.getlist("recipients")
         scheduled_for_raw = request.POST.get("scheduled_for")
 
         if not all([content, channel, recipient_ids]):
@@ -93,22 +93,26 @@ def send_ui_message(request):
                 messages.error(request, "Invalid scheduled time format.")
                 return redirect('messaging:messages_home')
 
-        # Create messages for each beneficiary
+        # Create and send messages
         for beneficiary in beneficiaries:
+            # Personalize message before saving
+            personalized_content = content.replace("{{1}}", beneficiary.name)
+
             message = Message.objects.create(
                 recipient=beneficiary,
-                content=content,
+                content=personalized_content,
                 channel=channel,
                 status="PENDING",
                 scheduled_for=scheduled_for
             )
+
             if not scheduled_for:  # send immediately if no schedule
                 send_message(message)
 
         messages.success(request, "Messages sent or scheduled successfully.")
         return redirect('messaging:messages_home')
 
-    # GET request → Show form with beneficiaries list
+    # GET request → Show form
     beneficiaries = Beneficiary.objects.all()
     messages_list = Message.objects.all().order_by('-sent_at')[:50]
     return render(request, "messages.html", {
