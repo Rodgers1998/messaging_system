@@ -104,9 +104,19 @@ USE_I18N = True
 USE_TZ = True
 
 # === Static Files (CSS, JavaScript, Images) ===
+# STATIC_URL = '/static/'
+# STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # for production collectstatic
+STATICFILES_DIRS = [BASE_DIR / 'static']  # your app's static folder
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
+# settings.py
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 # === Default Primary Key Field Type ===
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
