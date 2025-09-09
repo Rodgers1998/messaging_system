@@ -31,6 +31,7 @@ def register_view(request):
         form = RegisterForm()
     return render(request, "messaging/register.html", {"form": form})
 
+
 def login_view(request):
     if request.method == "POST":
         form = AuthenticationForm(data=request.POST)
@@ -40,6 +41,7 @@ def login_view(request):
     else:
         form = AuthenticationForm()
     return render(request, "messaging/login.html", {"form": form})
+
 
 def logout_view(request):
     logout(request)
@@ -177,6 +179,7 @@ def send_ui_message(request):
     content = form.cleaned_data["content"]
     channel = form.cleaned_data["channel"].upper()
     media = form.cleaned_data.get("media")
+    media_url = form.cleaned_data.get("media_url")
     beneficiary = form.cleaned_data["recipient"]
     scheduled_for = form.cleaned_data.get("scheduled_for")
 
@@ -197,20 +200,29 @@ def send_ui_message(request):
         content=personalized_content,
         channel=channel,
         media=media if media else None,
-        media_url=form.cleaned_data.get("media_url") if hasattr(form.cleaned_data, "media_url") else None,
+        media_url=media_url,
         status="PENDING",
         scheduled_for=scheduled_for,
     )
 
     if not scheduled_for:
         try:
-            success, _ = send_message(message)
+            logger.info(f"Sending message to {phone_number} via {channel}")
+            success, response = send_message(message)
+            logger.info(f"Send result: success={success}, response={response}")
             if success:
+                message.status = "SENT"
+                message.sent_at = timezone.now()
+                message.save()
                 messages.success(request, f"Message sent successfully to {beneficiary.name}.")
             else:
+                message.status = "FAILED"
+                message.save()
                 messages.error(request, f"Failed to send message to {beneficiary.name}.")
         except Exception as e:
-            logger.error(f"Failed to send message to {beneficiary.phone_number}: {str(e)}")
+            logger.exception(f"Failed to send message to {phone_number}")
+            message.status = "FAILED"
+            message.save()
             messages.error(request, f"Error while sending message to {beneficiary.name}.")
     else:
         messages.success(request, "Message scheduled successfully.")
@@ -232,6 +244,7 @@ def upload_recipients_view(request):
     content = form.cleaned_data.get("content")
     channel = form.cleaned_data.get("channel").upper()
     media = form.cleaned_data.get("media")
+    media_url = form.cleaned_data.get("media_url")
 
     try:
         data = pd.read_csv(file) if file.name.endswith(".csv") else pd.read_excel(file)
@@ -264,17 +277,24 @@ def upload_recipients_view(request):
                 content=personalized_content,
                 channel=channel,
                 media=media if media else None,
-                media_url=form.cleaned_data.get("media_url") if hasattr(form.cleaned_data, "media_url") else None,
+                media_url=media_url,
                 status="PENDING",
             )
             try:
-                success, _ = send_message(message)
+                success, response = send_message(message)
                 if success:
+                    message.status = "SENT"
+                    message.sent_at = timezone.now()
+                    message.save()
                     sent_count += 1
                 else:
+                    message.status = "FAILED"
+                    message.save()
                     failed_count += 1
             except Exception as e:
-                logger.error(f"Failed to send message to {beneficiary.phone_number}: {str(e)}")
+                logger.exception(f"Failed to send message to {beneficiary.phone_number}")
+                message.status = "FAILED"
+                message.save()
                 failed_count += 1
 
     if content:
