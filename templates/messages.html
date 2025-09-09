@@ -3,39 +3,204 @@
 {% block title %}Messaging – SHOFCO{% endblock %}
 
 {% block content %}
-<form method="POST" action="{% url 'messaging:send_ui_message' %}">
-  {% csrf_token %}
+<div class="container mt-4">
+  <h1 class="mb-4">Messaging Dashboard</h1>
 
-  <div class="mb-3">
-    <label for="content" class="form-label">Message Content</label>
-    <textarea name="content" id="content" class="form-control" rows="3" required></textarea>
-  </div>
-
-  <div class="mb-3">
-    <label for="channel" class="form-label">Channel</label>
-    <select name="channel" id="channel" class="form-select" required>
-      <option value="">Select channel</option>
-      <option value="SMS">SMS</option>
-      <option value="WHATSAPP">WhatsApp</option>
-    </select>
-  </div>
-
-  <div class="mb-3">
-    <label for="recipients" class="form-label">Select Beneficiaries</label>
-    <select name="recipients" id="recipients" class="form-select" multiple required>
-      {% for beneficiary in beneficiaries %}
-        <option value="{{ beneficiary.id }}">{{ beneficiary }}</option>
+  <!-- Django flash messages -->
+  <!-- {% if messages %}
+    <div>
+      {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
       {% endfor %}
-    </select>
-    <small class="form-text text-muted">Hold CTRL (or Command on Mac) to select multiple.</small>
+    </div>
+  {% endif %} -->
+
+  <!-- Single Message Form -->
+  <div class="card shadow-sm mb-5">
+    <div class="card-body">
+      <h2 class="h5 mb-4">Send a Single Message</h2>
+      <form method="POST" action="{% url 'messaging:send_ui_message' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Message Content -->
+        <div class="mb-3">
+          <label for="content" class="form-label">Message Content</label>
+          <textarea name="content" id="content" class="form-control" rows="3" maxlength="1000" required></textarea>
+          <div class="d-flex justify-content-between">
+            <small class="form-text text-muted">
+              Use <code>{% templatetag openvariable %}1{% templatetag closevariable %}</code> as a placeholder for recipient’s name.
+            </small>
+            <small id="charCount" class="text-muted">0 / 1000</small>
+          </div>
+        </div>
+
+        <!-- Channel -->
+        <div class="mb-3">
+          <label for="channel" class="form-label">Channel</label>
+          <select name="channel" id="channel" class="form-select" required>
+            <option value="">Select channel</option>
+            <option value="SMS">SMS</option>
+            <option value="WHATSAPP">WhatsApp</option>
+            <option value="EMAIL">Email</option>
+          </select>
+        </div>
+
+        <!-- Beneficiary -->
+        <div class="mb-3">
+          <label for="recipient" class="form-label">Select Beneficiary</label>
+          <select name="recipient" id="recipient" class="form-select" required>
+            <option value="">-- Select a beneficiary --</option>
+            {% for beneficiary in beneficiaries %}
+              <option value="{{ beneficiary.id }}">{{ beneficiary }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Media -->
+        <div class="mb-3">
+          <label for="media" class="form-label">Attach Media (optional)</label>
+          <input type="file" name="media" id="media" class="form-control" accept="image/*,application/pdf,video/*">
+          <small class="form-text text-muted">Supports images, PDFs, or videos for WhatsApp/Email.</small>
+          <div id="mediaPreview" class="mt-2"></div>
+        </div>
+
+        <!-- Schedule -->
+        <div class="mb-3" id="scheduleField">
+          <label for="scheduled_for" class="form-label">Schedule for (optional)</label>
+          <input type="datetime-local" name="scheduled_for" id="scheduled_for" class="form-control" />
+          <small class="form-text text-muted">Leave blank to send immediately.</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Send / Schedule</button>
+      </form>
+    </div>
   </div>
 
-  <div class="mb-3">
-    <label for="scheduled_for" class="form-label">Schedule for (optional)</label>
-    <input type="datetime-local" name="scheduled_for" id="scheduled_for" class="form-control" />
-    <small class="form-text text-muted">Leave blank to send immediately</small>
-  </div>
+  <!-- Bulk Upload Form -->
+  <div class="card shadow-sm mb-5">
+    <div class="card-body">
+      <h2 class="h5 mb-4">Bulk Upload Recipients</h2>
+      <form method="POST" action="{% url 'messaging:upload_recipients_view' %}" enctype="multipart/form-data">
+        {% csrf_token %}
 
-  <button type="submit" class="btn btn-primary">Send / Schedule</button>
-</form>
+        <div class="mb-3">
+          <label for="file" class="form-label">Upload Excel/CSV</label>
+          <input type="file" name="file" id="file" class="form-control" accept=".csv,.xlsx,.xls" required>
+          <small class="form-text text-muted">File should contain <strong>name</strong> and <strong>phone_number</strong> columns.</small>
+          <div id="fileNamePreview" class="mt-1 text-primary fw-bold"></div>
+        </div>
+
+        <div class="mb-3">
+          <label for="bulk_channel" class="form-label">Channel</label>
+          <select name="channel" id="bulk_channel" class="form-select" required>
+            <option value="">Select channel</option>
+            <option value="SMS">SMS</option>
+            <option value="WHATSAPP">WhatsApp</option>
+            <option value="EMAIL">Email</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="bulk_content" class="form-label">Default Message (optional)</label>
+          <textarea name="content" id="bulk_content" class="form-control" rows="3" maxlength="1000"></textarea>
+          <small class="form-text text-muted">
+            Use <code>{% templatetag openvariable %}1{% templatetag closevariable %}</code> as a placeholder for recipient’s name.
+          </small>
+        </div>
+
+        <div class="mb-3">
+          <label for="bulk_media" class="form-label">Attach Media (optional)</label>
+          <input type="file" name="media" id="bulk_media" class="form-control" accept="image/*,application/pdf,video/*">
+          <div id="bulkMediaPreview" class="mt-2"></div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Upload & Process</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Enhancements -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Character counter
+  const textarea = document.getElementById("content");
+  const charCount = document.getElementById("charCount");
+  if (textarea) {
+    textarea.addEventListener("input", () => {
+      charCount.textContent = `${textarea.value.length} / ${textarea.maxLength}`;
+    });
+  }
+
+  // File preview for bulk upload
+  const fileInput = document.getElementById("file");
+  const fileNamePreview = document.getElementById("fileNamePreview");
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      fileNamePreview.textContent = fileInput.files.length > 0 ? "Selected file: " + fileInput.files[0].name : "";
+    });
+  }
+
+  // Media preview (single send)
+  const mediaInput = document.getElementById("media");
+  const mediaPreview = document.getElementById("mediaPreview");
+  if (mediaInput) {
+    mediaInput.addEventListener("change", () => {
+      mediaPreview.innerHTML = "";
+      if (mediaInput.files.length > 0) {
+        const file = mediaInput.files[0];
+        if (file.type.startsWith("image/")) {
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+          img.style.maxHeight = "120px";
+          img.className = "mt-2 rounded shadow-sm";
+          mediaPreview.appendChild(img);
+        } else {
+          mediaPreview.textContent = "Attached: " + file.name;
+        }
+      }
+    });
+  }
+
+  // Media preview (bulk)
+  const bulkMediaInput = document.getElementById("bulk_media");
+  const bulkMediaPreview = document.getElementById("bulkMediaPreview");
+  if (bulkMediaInput) {
+    bulkMediaInput.addEventListener("change", () => {
+      bulkMediaPreview.innerHTML = "";
+      if (bulkMediaInput.files.length > 0) {
+        const file = bulkMediaInput.files[0];
+        if (file.type.startsWith("image/")) {
+          const img = document.createElement("img");
+          img.src = URL.createObjectURL(file);
+          img.style.maxHeight = "120px";
+          img.className = "mt-2 rounded shadow-sm";
+          bulkMediaPreview.appendChild(img);
+        } else {
+          bulkMediaPreview.textContent = "Attached: " + file.name;
+        }
+      }
+    });
+  }
+
+  // Hide schedule field for WhatsApp
+  const channelSelect = document.getElementById("channel");
+  const scheduleField = document.getElementById("scheduleField");
+  function toggleScheduleField() {
+    if (channelSelect.value === "WHATSAPP") {
+      scheduleField.style.display = "none";
+      document.getElementById("scheduled_for").value = "";
+    } else {
+      scheduleField.style.display = "block";
+    }
+  }
+  if (channelSelect && scheduleField) {
+    channelSelect.addEventListener("change", toggleScheduleField);
+    toggleScheduleField(); // run on page load
+  }
+});
+</script>
 {% endblock %}

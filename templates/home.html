@@ -3,55 +3,192 @@
 {% block title %}Dashboard - SHOFCO{% endblock %}
 
 {% block content %}
-<h1>Dashboard - Message Monitoring</h1>
+<h1 class="mb-4">📊 Messaging Dashboard</h1>
 
-<p>Total messages: {{ total_messages }}</p>
-
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>Recipient</th>
-      <th>Content</th>
-      <th>Channel</th>
-      <th>Status</th>
-      <th>Scheduled For</th>
-      <th>Sent At</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for message in messages %}
-      <tr>
-        <td>
-          {% if message.recipient.name %}
-            {{ message.recipient.name }}
-          {% else %}
-            {{ message.recipient.phone_number }}
-          {% endif %}
-        </td>
-        <td>{{ message.content }}</td>
-        <td>{{ message.channel }}</td>
-        <td>{{ message.status }}</td>
-        <td>{{ message.scheduled_for|default:"-" }}</td>
-        <td>{{ message.sent_at|default:"-" }}</td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6">No messages found.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<div class="pagination">
-  <span>
-    Page {{ messages.number }} of {{ messages.paginator.num_pages }}.
-  </span>
-
-  {% if messages.has_previous %}
-    <a href="?page={{ messages.previous_page_number }}">Previous</a>
-  {% endif %}
-
-  {% if messages.has_next %}
-    <a href="?page={{ messages.next_page_number }}">Next</a>
-  {% endif %}
+<!-- 🔢 KPI Cards -->
+<div class="row text-center mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm rounded-3">
+      <div class="card-body">
+        <h6>Total Messages</h6>
+        <h3 class="text-primary">{{ total_messages|default:0 }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm rounded-3">
+      <div class="card-body">
+        <h6>Sent</h6>
+        <h3 class="text-success">{{ sent_messages|default:0 }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm rounded-3">
+      <div class="card-body">
+        <h6>Failed</h6>
+        <h3 class="text-danger">{{ failed_messages|default:0 }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card shadow-sm rounded-3">
+      <div class="card-body">
+        <h6>Pending</h6>
+        <h3 class="text-warning">{{ pending_messages|default:0 }}</h3>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- 📊 Charts Row -->
+<div class="row mb-5">
+  <div class="col-md-4">
+    <div class="card shadow-sm rounded-3">
+      <div class="card-header fw-bold">Delivery Status</div>
+      <div class="card-body">
+        <canvas id="statusDonut"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm rounded-3">
+      <div class="card-header fw-bold">Messages Over Time</div>
+      <div class="card-body" style="height:300px;">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card shadow-sm rounded-3">
+      <div class="card-header fw-bold">Channel Breakdown</div>
+      <div class="card-body" style="height:300px;">
+        <canvas id="channelBar"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🔎 Search + Pagination -->
+<div class="row mb-3 align-items-center">
+  <div class="col-md-6">
+    <form method="get" class="d-flex">
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Search messages..." class="form-control me-2">
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+  </div>
+  <div class="col-md-6 text-end">
+    <span class="me-2">Page {{ messages.number }} of {{ messages.paginator.num_pages }}</span>
+    {% if messages.has_previous %}
+      <a class="btn btn-outline-primary btn-sm me-1" href="?page={{ messages.previous_page_number }}&q={{ search_query }}">Previous</a>
+    {% endif %}
+    {% if messages.has_next %}
+      <a class="btn btn-outline-primary btn-sm" href="?page={{ messages.next_page_number }}&q={{ search_query }}">Next</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 📋 Messages Table -->
+<div class="card shadow-sm rounded-3">
+  <div class="card-header fw-bold">Recent Messages</div>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Recipient</th>
+          <th>Content</th>
+          <th>Channel</th>
+          <th>Status</th>
+          <th>Scheduled For</th>
+          <th>Sent At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for message in messages %}
+          <tr>
+            <td>{{ message.recipient.name|default:message.recipient.phone_number }}</td>
+            <td>{{ message.content|truncatechars:60 }}</td>
+            <td>{{ message.channel }}</td>
+            <td>
+              {% if message.status == "PENDING" %}
+                <span class="badge bg-warning text-dark">{{ message.status }}</span>
+              {% elif message.status == "SENT" %}
+                <span class="badge bg-success">{{ message.status }}</span>
+              {% else %}
+                <span class="badge bg-danger">{{ message.status }}</span>
+              {% endif %}
+            </td>
+            <td>{{ message.scheduled_for|default:"-" }}</td>
+            <td>{{ message.sent_at|default:"-" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center">No messages found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Ensure defaults if data is empty
+  const labels = {{ chart_labels|safe|default:"[]" }};
+  const sentData = {{ sent_data|safe|default:"[]" }};
+  const failedData = {{ failed_data|safe|default:"[]" }};
+  const channelLabels = {{ channel_labels|safe|default:"[]" }};
+  const channelSent = {{ channel_sent|safe|default:"[]" }};
+  const channelFailed = {{ channel_failed|safe|default:"[]" }};
+  const channelPending = {{ channel_pending|safe|default:"[]" }};
+
+  // Donut Chart: Delivery Status
+  new Chart(document.getElementById('statusDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Sent', 'Failed', 'Pending'],
+      datasets: [{
+        data: [{{ sent_messages|default:0 }}, {{ failed_messages|default:0 }}, {{ pending_messages|default:0 }}],
+        backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Line Chart: Messages Over Time
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label: 'Sent', data: sentData, fill: true, backgroundColor: 'rgba(40,167,69,0.2)', borderColor: '#28a745', tension: 0.3 },
+        { label: 'Failed', data: failedData, fill: true, backgroundColor: 'rgba(220,53,69,0.2)', borderColor: '#dc3545', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Bar Chart: Channel Breakdown
+  new Chart(document.getElementById('channelBar'), {
+    type: 'bar',
+    data: {
+      labels: channelLabels,
+      datasets: [
+        { label: 'Sent', data: channelSent, backgroundColor: '#28a745' },
+        { label: 'Failed', data: channelFailed, backgroundColor: '#dc3545' },
+        { label: 'Pending', data: channelPending, backgroundColor: '#ffc107' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+    }
+  });
+</script>
 {% endblock %}
