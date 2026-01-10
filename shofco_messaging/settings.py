@@ -73,20 +73,20 @@ TEMPLATES = [
 # === WSGI Application ===
 WSGI_APPLICATION = 'shofco_messaging.wsgi.application'
 
-# === Database ===
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-# import dj_database_url
-# import os
-
+# # === Database ===
 # DATABASES = {
-#     'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
 # }
+
+import dj_database_url
+import os
+
+DATABASES = {
+    'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+}
 
 
 # === Password Validation ===
