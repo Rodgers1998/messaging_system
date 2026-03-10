@@ -105,9 +105,9 @@ def send_whatsapp_via_infobip(to_phone: str, message_text: str, parameters: dict
     url = f"{INFOBIP_BASE_URL}/whatsapp/1/message/text"
     payload = {
         "from": sender,
-        "to": to_phone,
+        "to": to_phone.lstrip("+"),   # Infobip WhatsApp requires no + prefix on recipient
         "content": {
-            "text": message_text   # ✅ No "type" field — Infobip rejects it
+            "text": message_text
         },
     }
     return _post_request(url, payload)
@@ -147,7 +147,7 @@ def send_whatsapp_media_via_infobip(to_phone: str, media_url: str, caption: str 
 
     payload = {
         "from": sender,
-        "to": to_phone,
+        "to": to_phone.lstrip("+"),   # Infobip WhatsApp requires no + prefix on recipient
         "content": {
             "mediaUrl": media_url,
             "caption": caption,
