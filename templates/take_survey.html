@@ -1,21 +1,63 @@
-
 {% extends 'base.html' %}
-{% block content %}
-<h2>{{ survey.title }}</h2>
-<p>{{ question.text }}</p>
 
-<form method="POST">
-    {% csrf_token %}
-    {% if question.question_type == 'TEXT' %}
-        <textarea name="answer" required></textarea>
-    {% elif question.question_type == 'CHOICE' %}
-        {% for choice in question.choices.all %}
-            <div>
-                <input type="radio" name="answer" id="choice{{ forloop.counter }}" value="{{ choice.id }}" required>
-                <label for="choice{{ forloop.counter }}">{{ choice.text }}</label>
+{% block title %}{{ survey.title }} – SHOFCO{% endblock %}
+{% block topbar_title %}Take Survey{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-start justify-content-center" style="min-height: calc(100vh - 140px); padding-top: 20px;">
+  <div style="width:100%;max-width:560px;">
+
+    <!-- Survey header -->
+    <div class="mb-4">
+      <a href="{% url 'surveys:survey_list' %}" style="display:inline-flex;align-items:center;gap:6px;font-size:.83rem;font-weight:600;color:var(--text-muted);text-decoration:none;margin-bottom:16px;">
+        <i class="bi bi-arrow-left"></i> Back to surveys
+      </a>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:var(--text-main);">{{ survey.title }}</div>
+    </div>
+
+    <!-- Question card -->
+    <div class="card" style="border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.07);">
+      <div class="card-body" style="padding:28px;">
+
+        <!-- Question -->
+        <div style="margin-bottom:24px;">
+          <div style="display:inline-block;background:var(--brand-light);color:var(--brand);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:10px;">
+            Question
+          </div>
+          <p style="font-size:1.05rem;font-weight:600;color:var(--text-main);margin:0;line-height:1.5;">{{ question.text }}</p>
+        </div>
+
+        <form method="POST">
+          {% csrf_token %}
+
+          {% if question.question_type == 'TEXT' %}
+            <textarea name="answer" class="form-control" rows="4" required
+                      placeholder="Type your answer here…" style="resize:vertical;"></textarea>
+
+          {% elif question.question_type == 'CHOICE' %}
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              {% for choice in question.choices.all %}
+                <label style="display:flex;align-items:center;gap:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;cursor:pointer;transition:border .15s,background .15s;"
+                       onmouseover="this.style.borderColor='var(--brand)';this.style.background='var(--brand-light)';"
+                       onmouseout="this.style.borderColor='var(--border)';this.style.background='#f8fafc';">
+                  <input type="radio" name="answer" value="{{ choice.id }}" required
+                         style="width:18px;height:18px;accent-color:var(--brand);flex-shrink:0;">
+                  <span style="font-size:.9rem;font-weight:500;color:var(--text-main);">{{ choice.text }}</span>
+                </label>
+              {% endfor %}
             </div>
-        {% endfor %}
-    {% endif %}
-    <button type="submit">Next</button>
-</form>
+          {% endif %}
+
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-grow-1" style="padding:11px;">
+              Next <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+</div>
 {% endblock %}

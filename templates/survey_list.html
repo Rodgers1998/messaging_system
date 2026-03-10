@@ -1,11 +1,47 @@
 {% extends 'base.html' %}
+
+{% block title %}Surveys – SHOFCO{% endblock %}
+{% block topbar_title %}Available Surveys{% endblock %}
+
 {% block content %}
-<h2>Available Surveys</h2>
-<ul>
-    {% for survey in surveys %}
-    <li><a href="{% url 'surveys:take_survey' survey.id %}">{{ survey.title }}</a></li>
-    {% empty %}
-    <li>No surveys available.</li>
-    {% endfor %}
-</ul>
+<div class="page-header">
+  <h1>Available Surveys</h1>
+  <p>Select a survey below to begin participating.</p>
+</div>
+
+<div class="row g-3" style="max-width:760px;">
+  {% for survey in surveys %}
+    <div class="col-md-6">
+      <a href="{% url 'surveys:take_survey' survey.id %}" style="text-decoration:none;">
+        <div class="card h-100" style="transition:box-shadow .15s,transform .15s;cursor:pointer;"
+             onmouseover="this.style.boxShadow='0 4px 20px rgba(26,86,219,.12)';this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.boxShadow='';this.style.transform='';">
+          <div class="card-body" style="padding:22px;">
+            <div style="width:40px;height:40px;background:var(--brand-light);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+              <i class="bi bi-clipboard-check" style="color:var(--brand);font-size:1.1rem;"></i>
+            </div>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text-main);margin-bottom:6px;">
+              {{ survey.title }}
+            </div>
+            {% if survey.description %}
+              <p style="font-size:.83rem;color:var(--text-muted);margin:0 0 14px;line-height:1.5;">{{ survey.description|truncatechars:80 }}</p>
+            {% endif %}
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:.8rem;font-weight:600;color:var(--brand);">
+              Start survey <i class="bi bi-arrow-right"></i>
+            </span>
+          </div>
+        </div>
+      </a>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body text-center py-5" style="color:var(--text-muted);">
+          <i class="bi bi-clipboard-x" style="font-size:2.5rem;display:block;margin-bottom:12px;"></i>
+          <p style="font-size:.95rem;margin:0;">No surveys are available at the moment.</p>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
 {% endblock %}

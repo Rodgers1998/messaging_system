@@ -1,22 +1,38 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Login – SHOFCO{% endblock %}
+{% block topbar_title %}Login{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2 class="text-center">Login</h2>
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <form method="post" class="card p-4">
-                {% csrf_token %}
-                {{ form|crispy }}
-                <button type="submit" class="btn btn-primary btn-block">Login</button>
-                <div class="text-center mt-2">
-                    <a href="{% url 'messaging:register' %}">Don't have an account? Register</a>
-                </div>
-            </form>
-        </div>
+<div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 120px);">
+  <div style="width: 100%; max-width: 420px;">
+
+    <!-- Logo / Brand mark -->
+    <div class="text-center mb-4">
+      <div style="width:56px;height:56px;background:var(--brand);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 4px 20px rgba(26,86,219,.3);">
+        <i class="bi bi-send-fill" style="color:#fff;font-size:1.4rem;"></i>
+      </div>
+      <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;color:var(--text-main);margin:0 0 4px;">Welcome back</h1>
+      <p style="color:var(--text-muted);font-size:.875rem;margin:0;">Sign in to your SHOFCO account</p>
     </div>
+
+    <div class="card" style="border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+      <div class="card-body" style="padding:28px;">
+        <form method="post">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <button type="submit" class="btn btn-primary w-100 mt-2" style="padding:11px;font-size:.95rem;letter-spacing:.01em;">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+          </button>
+        </form>
+        <div class="text-center mt-4" style="padding-top:16px;border-top:1px solid var(--border);">
+          <span style="font-size:.85rem;color:var(--text-muted);">Don't have an account?</span>
+          <a href="{% url 'messaging:register' %}" style="font-size:.85rem;font-weight:600;color:var(--brand);text-decoration:none;margin-left:6px;">Register here</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

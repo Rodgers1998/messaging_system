@@ -1,5 +1,52 @@
 {% extends 'base.html' %}
+
+{% block title %}Survey Complete – SHOFCO{% endblock %}
+{% block topbar_title %}Survey Complete{% endblock %}
+
 {% block content %}
-<h2>Thank you for completing the survey: {{ survey.title }}</h2>
-<p>Your responses have been recorded.</p>
+<div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 120px);">
+  <div style="width:100%;max-width:480px;text-align:center;">
+
+    <!-- Success animation -->
+    <div style="width:80px;height:80px;background:#d1fae5;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px;animation:popIn .4s ease;">
+      <i class="bi bi-check-lg" style="font-size:2.2rem;color:var(--success);"></i>
+    </div>
+
+    <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.75rem;color:var(--text-main);margin:0 0 10px;">
+      Thank you!
+    </h1>
+    <p style="color:var(--text-muted);font-size:.95rem;max-width:340px;margin:0 auto 8px;line-height:1.6;">
+      You've successfully completed
+    </p>
+    <p style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;color:var(--brand);margin:0 0 32px;">
+      {{ survey.title }}
+    </p>
+
+    <div class="card" style="border-radius:14px;text-align:left;margin-bottom:24px;">
+      <div class="card-body" style="padding:20px 24px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:36px;height:36px;background:var(--brand-light);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="bi bi-clipboard-check" style="color:var(--brand);"></i>
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:.88rem;color:var(--text-main);">Responses recorded</div>
+            <div style="font-size:.8rem;color:var(--text-muted);">Your answers have been saved successfully.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a href="{% url 'surveys:survey_list' %}" class="btn btn-primary" style="padding:11px 28px;font-size:.9rem;">
+      <i class="bi bi-arrow-left me-2"></i>Back to Surveys
+    </a>
+
+  </div>
+</div>
+
+<style>
+  @keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+  }
+</style>
 {% endblock %}

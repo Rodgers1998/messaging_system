@@ -1,129 +1,150 @@
 {% extends "base.html" %}
 
 {% block title %}Messaging – SHOFCO{% endblock %}
+{% block topbar_title %}Send Messages{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h1 class="mb-4">Messaging Dashboard</h1>
+<div class="page-header">
+  <h1>Send Messages</h1>
+  <p>Send a single message or upload a bulk list of recipients.</p>
+</div>
 
-  <!-- Django flash messages -->
-  <!-- {% if messages %}
-    <div>
-      {% for msg in messages %}
-        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
-          {{ msg }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %} -->
+{% if messages %}
+  <div class="mb-4">
+    {% for msg in messages %}
+      <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 
-  <!-- Single Message Form -->
-  <div class="card shadow-sm mb-5">
-    <div class="card-body">
-      <h2 class="h5 mb-4">Send a Single Message</h2>
-      <form method="POST" action="{% url 'messaging:send_ui_message' %}" enctype="multipart/form-data">
-        {% csrf_token %}
+<div class="row g-4">
 
-        <!-- Message Content -->
-        <div class="mb-3">
-          <label for="content" class="form-label">Message Content</label>
-          <textarea name="content" id="content" class="form-control" rows="3" maxlength="1000" required></textarea>
-          <div class="d-flex justify-content-between">
-            <small class="form-text text-muted">
-              Use <code>{% templatetag openvariable %}1{% templatetag closevariable %}</code> as a placeholder for recipient’s name.
-            </small>
-            <small id="charCount" class="text-muted">0 / 1000</small>
+  <!-- ── Single Message ── -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span style="width:28px;height:28px;background:var(--brand-light);border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--brand);">
+          <i class="bi bi-send-fill" style="font-size:.8rem;"></i>
+        </span>
+        Send a Single Message
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{% url 'messaging:send_ui_message' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label for="content" class="form-label">Message Content</label>
+            <textarea name="content" id="content" class="form-control" rows="4" maxlength="1000" required
+                      placeholder="Type your message here…"></textarea>
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted">Use <code>{% templatetag openvariable %}1{% templatetag closevariable %}</code> as a placeholder for the recipient's name.</small>
+              <small id="charCount" class="text-muted fw-semibold">0 / 1000</small>
+            </div>
           </div>
-        </div>
 
-        <!-- Channel -->
-        <div class="mb-3">
-          <label for="channel" class="form-label">Channel</label>
-          <select name="channel" id="channel" class="form-select" required>
-            <option value="">Select channel</option>
-            <option value="SMS">SMS</option>
-            <option value="WHATSAPP">WhatsApp</option>
-            <option value="EMAIL">Email</option>
-          </select>
-        </div>
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label for="channel" class="form-label">Channel</label>
+              <select name="channel" id="channel" class="form-select" required>
+                <option value="">Select channel</option>
+                <option value="SMS"><i class="bi bi-phone"></i> SMS</option>
+                <option value="WHATSAPP">WhatsApp</option>
+                <option value="EMAIL">Email</option>
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label for="recipient" class="form-label">Beneficiary</label>
+              <select name="recipient" id="recipient" class="form-select" required>
+                <option value="">Select beneficiary</option>
+                {% for beneficiary in beneficiaries %}
+                  <option value="{{ beneficiary.id }}">{{ beneficiary }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
 
-        <!-- Beneficiary -->
-        <div class="mb-3">
-          <label for="recipient" class="form-label">Select Beneficiary</label>
-          <select name="recipient" id="recipient" class="form-select" required>
-            <option value="">-- Select a beneficiary --</option>
-            {% for beneficiary in beneficiaries %}
-              <option value="{{ beneficiary.id }}">{{ beneficiary }}</option>
-            {% endfor %}
-          </select>
-        </div>
+          <div class="mb-3">
+            <label for="media" class="form-label">Attach Media <span class="text-muted fw-normal">(optional)</span></label>
+            <input type="file" name="media" id="media" class="form-control" accept="image/*,application/pdf,video/*">
+            <small class="text-muted">Supports images, PDFs, or videos for WhatsApp / Email.</small>
+            <div id="mediaPreview" class="mt-2"></div>
+          </div>
 
-        <!-- Media -->
-        <div class="mb-3">
-          <label for="media" class="form-label">Attach Media (optional)</label>
-          <input type="file" name="media" id="media" class="form-control" accept="image/*,application/pdf,video/*">
-          <small class="form-text text-muted">Supports images, PDFs, or videos for WhatsApp/Email.</small>
-          <div id="mediaPreview" class="mt-2"></div>
-        </div>
+          <div class="mb-4" id="scheduleField">
+            <label for="scheduled_for" class="form-label">Schedule For <span class="text-muted fw-normal">(optional)</span></label>
+            <input type="datetime-local" name="scheduled_for" id="scheduled_for" class="form-control" />
+            <small class="text-muted">Leave blank to send immediately.</small>
+          </div>
 
-        <!-- Schedule -->
-        <div class="mb-3" id="scheduleField">
-          <label for="scheduled_for" class="form-label">Schedule for (optional)</label>
-          <input type="datetime-local" name="scheduled_for" id="scheduled_for" class="form-control" />
-          <small class="form-text text-muted">Leave blank to send immediately.</small>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Send / Schedule</button>
-      </form>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-send me-1"></i> Send / Schedule
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 
-  <!-- Bulk Upload Form -->
-  <div class="card shadow-sm mb-5">
-    <div class="card-body">
-      <h2 class="h5 mb-4">Bulk Upload Recipients</h2>
-      <form method="POST" action="{% url 'messaging:upload_recipients_view' %}" enctype="multipart/form-data">
-        {% csrf_token %}
+  <!-- ── Bulk Upload ── -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span style="width:28px;height:28px;background:#d1fae5;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--success);">
+          <i class="bi bi-upload" style="font-size:.8rem;"></i>
+        </span>
+        Bulk Upload Recipients
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{% url 'messaging:upload_recipients_view' %}" enctype="multipart/form-data">
+          {% csrf_token %}
 
-        <div class="mb-3">
-          <label for="file" class="form-label">Upload Excel/CSV</label>
-          <input type="file" name="file" id="file" class="form-control" accept=".csv,.xlsx,.xls" required>
-          <small class="form-text text-muted">File should contain <strong>name</strong> and <strong>phone_number</strong> columns.</small>
-          <div id="fileNamePreview" class="mt-1 text-primary fw-bold"></div>
-        </div>
+          <div class="mb-3">
+            <label for="file" class="form-label">Upload Excel / CSV</label>
+            <div id="dropZone" style="border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border .15s,background .15s;"
+                 onclick="document.getElementById('file').click()">
+              <i class="bi bi-file-earmark-arrow-up" style="font-size:1.8rem;color:var(--text-muted);display:block;margin-bottom:8px;"></i>
+              <span style="font-weight:600;font-size:.88rem;color:var(--text-main);">Click to browse</span>
+              <span style="color:var(--text-muted);font-size:.8rem;display:block;margin-top:2px;">or drag and drop your file here</span>
+              <div id="fileNamePreview" class="mt-2" style="font-size:.82rem;color:var(--brand);font-weight:600;"></div>
+            </div>
+            <input type="file" name="file" id="file" class="d-none" accept=".csv,.xlsx,.xls" required>
+            <small class="text-muted">File must contain <strong>name</strong> and <strong>phone_number</strong> columns.</small>
+          </div>
 
-        <div class="mb-3">
-          <label for="bulk_channel" class="form-label">Channel</label>
-          <select name="channel" id="bulk_channel" class="form-select" required>
-            <option value="">Select channel</option>
-            <option value="SMS">SMS</option>
-            <option value="WHATSAPP">WhatsApp</option>
-            <option value="EMAIL">Email</option>
-          </select>
-        </div>
+          <div class="mb-3">
+            <label for="bulk_channel" class="form-label">Channel</label>
+            <select name="channel" id="bulk_channel" class="form-select" required>
+              <option value="">Select channel</option>
+              <option value="SMS">SMS</option>
+              <option value="WHATSAPP">WhatsApp</option>
+              <option value="EMAIL">Email</option>
+            </select>
+          </div>
 
-        <div class="mb-3">
-          <label for="bulk_content" class="form-label">Default Message (optional)</label>
-          <textarea name="content" id="bulk_content" class="form-control" rows="3" maxlength="1000"></textarea>
-          <small class="form-text text-muted">
-            Use <code>{% templatetag openvariable %}1{% templatetag closevariable %}</code> as a placeholder for recipient’s name.
-          </small>
-        </div>
+          <div class="mb-3">
+            <label for="bulk_content" class="form-label">Default Message <span class="text-muted fw-normal">(optional)</span></label>
+            <textarea name="content" id="bulk_content" class="form-control" rows="4" maxlength="1000"
+                      placeholder="Default message to send to all recipients…"></textarea>
+            <small class="text-muted">Use <code>{% templatetag openvariable %}1{% templatetag closevariable %}</code> for recipient's name.</small>
+          </div>
 
-        <div class="mb-3">
-          <label for="bulk_media" class="form-label">Attach Media (optional)</label>
-          <input type="file" name="media" id="bulk_media" class="form-control" accept="image/*,application/pdf,video/*">
-          <div id="bulkMediaPreview" class="mt-2"></div>
-        </div>
+          <div class="mb-4">
+            <label for="bulk_media" class="form-label">Attach Media <span class="text-muted fw-normal">(optional)</span></label>
+            <input type="file" name="media" id="bulk_media" class="form-control" accept="image/*,application/pdf,video/*">
+            <div id="bulkMediaPreview" class="mt-2"></div>
+          </div>
 
-        <button type="submit" class="btn btn-success">Upload & Process</button>
-      </form>
+          <button type="submit" class="btn btn-success w-100">
+            <i class="bi bi-upload me-1"></i> Upload & Process
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Enhancements -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   // Character counter
@@ -131,65 +152,64 @@ document.addEventListener("DOMContentLoaded", function () {
   const charCount = document.getElementById("charCount");
   if (textarea) {
     textarea.addEventListener("input", () => {
-      charCount.textContent = `${textarea.value.length} / ${textarea.maxLength}`;
+      const len = textarea.value.length;
+      charCount.textContent = `${len} / ${textarea.maxLength}`;
+      charCount.style.color = len > 900 ? 'var(--danger)' : 'var(--text-muted)';
     });
   }
 
-  // File preview for bulk upload
+  // File drop zone
   const fileInput = document.getElementById("file");
+  const dropZone  = document.getElementById("dropZone");
   const fileNamePreview = document.getElementById("fileNamePreview");
   if (fileInput) {
     fileInput.addEventListener("change", () => {
-      fileNamePreview.textContent = fileInput.files.length > 0 ? "Selected file: " + fileInput.files[0].name : "";
+      if (fileInput.files.length > 0) {
+        fileNamePreview.textContent = "✓ " + fileInput.files[0].name;
+        dropZone.style.borderColor = 'var(--success)';
+        dropZone.style.background  = '#f0fdf4';
+      }
     });
-  }
-
-  // Media preview (single send)
-  const mediaInput = document.getElementById("media");
-  const mediaPreview = document.getElementById("mediaPreview");
-  if (mediaInput) {
-    mediaInput.addEventListener("change", () => {
-      mediaPreview.innerHTML = "";
-      if (mediaInput.files.length > 0) {
-        const file = mediaInput.files[0];
-        if (file.type.startsWith("image/")) {
-          const img = document.createElement("img");
-          img.src = URL.createObjectURL(file);
-          img.style.maxHeight = "120px";
-          img.className = "mt-2 rounded shadow-sm";
-          mediaPreview.appendChild(img);
-        } else {
-          mediaPreview.textContent = "Attached: " + file.name;
-        }
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--brand)'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--border)'; });
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        fileNamePreview.textContent = "✓ " + e.dataTransfer.files[0].name;
+        dropZone.style.borderColor = 'var(--success)';
+        dropZone.style.background  = '#f0fdf4';
       }
     });
   }
 
-  // Media preview (bulk)
-  const bulkMediaInput = document.getElementById("bulk_media");
-  const bulkMediaPreview = document.getElementById("bulkMediaPreview");
-  if (bulkMediaInput) {
-    bulkMediaInput.addEventListener("change", () => {
-      bulkMediaPreview.innerHTML = "";
-      if (bulkMediaInput.files.length > 0) {
-        const file = bulkMediaInput.files[0];
+  // Media preview helper
+  function mediaPreview(inputId, previewId) {
+    const input   = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    if (!input) return;
+    input.addEventListener("change", () => {
+      preview.innerHTML = "";
+      if (input.files.length) {
+        const file = input.files[0];
         if (file.type.startsWith("image/")) {
           const img = document.createElement("img");
           img.src = URL.createObjectURL(file);
-          img.style.maxHeight = "120px";
-          img.className = "mt-2 rounded shadow-sm";
-          bulkMediaPreview.appendChild(img);
+          img.style.cssText = "max-height:100px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);";
+          preview.appendChild(img);
         } else {
-          bulkMediaPreview.textContent = "Attached: " + file.name;
+          preview.innerHTML = `<span style="font-size:.82rem;color:var(--brand);font-weight:500;">📎 ${file.name}</span>`;
         }
       }
     });
   }
+  mediaPreview("media", "mediaPreview");
+  mediaPreview("bulk_media", "bulkMediaPreview");
 
-  // Hide schedule field for WhatsApp
-  const channelSelect = document.getElementById("channel");
-  const scheduleField = document.getElementById("scheduleField");
-  function toggleScheduleField() {
+  // Hide schedule for WhatsApp
+  const channelSelect  = document.getElementById("channel");
+  const scheduleField  = document.getElementById("scheduleField");
+  function toggleSchedule() {
     if (channelSelect.value === "WHATSAPP") {
       scheduleField.style.display = "none";
       document.getElementById("scheduled_for").value = "";
@@ -198,8 +218,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
   if (channelSelect && scheduleField) {
-    channelSelect.addEventListener("change", toggleScheduleField);
-    toggleScheduleField(); // run on page load
+    channelSelect.addEventListener("change", toggleSchedule);
+    toggleSchedule();
   }
 });
 </script>

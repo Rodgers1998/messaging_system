@@ -1,99 +1,98 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - SHOFCO{% endblock %}
+{% block title %}Dashboard – SHOFCO{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">📊 Messaging Dashboard</h1>
+<div class="page-header">
+  <h1>Messaging Dashboard</h1>
+  <p>Overview of all messages sent across channels.</p>
+</div>
 
-<!-- 🔢 KPI Cards -->
-<div class="row text-center mb-4">
-  <div class="col-md-3">
-    <div class="card shadow-sm rounded-3">
-      <div class="card-body">
-        <h6>Total Messages</h6>
-        <h3 class="text-primary">{{ total_messages|default:0 }}</h3>
-      </div>
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card primary">
+      <div class="stat-icon"><i class="bi bi-envelope"></i></div>
+      <div class="stat-label">Total Messages</div>
+      <div class="stat-value">{{ total_messages|default:0 }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm rounded-3">
-      <div class="card-body">
-        <h6>Sent</h6>
-        <h3 class="text-success">{{ sent_messages|default:0 }}</h3>
-      </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card success">
+      <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+      <div class="stat-label">Sent</div>
+      <div class="stat-value">{{ sent_messages|default:0 }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm rounded-3">
-      <div class="card-body">
-        <h6>Failed</h6>
-        <h3 class="text-danger">{{ failed_messages|default:0 }}</h3>
-      </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card danger">
+      <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+      <div class="stat-label">Failed</div>
+      <div class="stat-value">{{ failed_messages|default:0 }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card shadow-sm rounded-3">
-      <div class="card-body">
-        <h6>Pending</h6>
-        <h3 class="text-warning">{{ pending_messages|default:0 }}</h3>
-      </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card warning">
+      <div class="stat-icon"><i class="bi bi-clock"></i></div>
+      <div class="stat-label">Pending</div>
+      <div class="stat-value">{{ pending_messages|default:0 }}</div>
     </div>
   </div>
 </div>
 
-<!-- 📊 Charts Row -->
-<div class="row mb-5">
+<!-- Charts -->
+<div class="row g-3 mb-4">
   <div class="col-md-4">
-    <div class="card shadow-sm rounded-3">
-      <div class="card-header fw-bold">Delivery Status</div>
-      <div class="card-body">
+    <div class="card h-100">
+      <div class="card-header">Delivery Status</div>
+      <div class="card-body d-flex align-items-center justify-content-center" style="min-height:220px;">
         <canvas id="statusDonut"></canvas>
       </div>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card shadow-sm rounded-3">
-      <div class="card-header fw-bold">Messages Over Time</div>
-      <div class="card-body" style="height:300px;">
-        <canvas id="trendChart"></canvas>
+    <div class="card h-100">
+      <div class="card-header">Messages Over Time</div>
+      <div class="card-body" style="min-height:220px;">
+        <canvas id="trendChart" style="max-height:220px;"></canvas>
       </div>
     </div>
   </div>
   <div class="col-md-4">
-    <div class="card shadow-sm rounded-3">
-      <div class="card-header fw-bold">Channel Breakdown</div>
-      <div class="card-body" style="height:300px;">
-        <canvas id="channelBar"></canvas>
+    <div class="card h-100">
+      <div class="card-header">Channel Breakdown</div>
+      <div class="card-body" style="min-height:220px;">
+        <canvas id="channelBar" style="max-height:220px;"></canvas>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 🔎 Search + Pagination -->
-<div class="row mb-3 align-items-center">
-  <div class="col-md-6">
-    <form method="get" class="d-flex">
-      <input type="text" name="q" value="{{ search_query }}" placeholder="Search messages..." class="form-control me-2">
-      <button type="submit" class="btn btn-primary">Search</button>
-    </form>
+<!-- Search + Table -->
+<div class="card">
+  <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <span>Recent Messages</span>
+    <div class="d-flex align-items-center gap-2">
+      <form method="get" class="d-flex" style="gap:8px;">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search messages…"
+               class="form-control form-control-sm" style="width:200px;">
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      </form>
+      <span class="text-muted" style="font-size:.8rem;white-space:nowrap;">
+        Page {{ messages.number }} of {{ messages.paginator.num_pages }}
+      </span>
+      {% if messages.has_previous %}
+        <a class="btn btn-sm btn-outline-secondary" href="?page={{ messages.previous_page_number }}&q={{ search_query }}">‹</a>
+      {% endif %}
+      {% if messages.has_next %}
+        <a class="btn btn-sm btn-outline-secondary" href="?page={{ messages.next_page_number }}&q={{ search_query }}">›</a>
+      {% endif %}
+    </div>
   </div>
-  <div class="col-md-6 text-end">
-    <span class="me-2">Page {{ messages.number }} of {{ messages.paginator.num_pages }}</span>
-    {% if messages.has_previous %}
-      <a class="btn btn-outline-primary btn-sm me-1" href="?page={{ messages.previous_page_number }}&q={{ search_query }}">Previous</a>
-    {% endif %}
-    {% if messages.has_next %}
-      <a class="btn btn-outline-primary btn-sm" href="?page={{ messages.next_page_number }}&q={{ search_query }}">Next</a>
-    {% endif %}
-  </div>
-</div>
-
-<!-- 📋 Messages Table -->
-<div class="card shadow-sm rounded-3">
-  <div class="card-header fw-bold">Recent Messages</div>
   <div class="table-responsive">
-    <table class="table table-striped table-hover align-middle mb-0">
-      <thead class="table-light">
+    <table class="table mb-0">
+      <thead>
         <tr>
           <th>Recipient</th>
           <th>Content</th>
@@ -106,88 +105,98 @@
       <tbody>
         {% for message in messages %}
           <tr>
-            <td>{{ message.recipient.name|default:message.recipient.phone_number }}</td>
-            <td>{{ message.content|truncatechars:60 }}</td>
-            <td>{{ message.channel }}</td>
+            <td style="font-weight:500;">{{ message.recipient.name|default:message.recipient.phone_number }}</td>
+            <td style="color:var(--text-muted);">{{ message.content|truncatechars:60 }}</td>
+            <td>
+              <span style="display:inline-flex;align-items:center;gap:4px;font-size:.8rem;font-weight:600;color:var(--text-muted);">
+                {% if message.channel == "SMS" %}<i class="bi bi-phone"></i>
+                {% elif message.channel == "WHATSAPP" %}<i class="bi bi-whatsapp" style="color:#25d366;"></i>
+                {% elif message.channel == "EMAIL" %}<i class="bi bi-envelope"></i>
+                {% endif %}
+                {{ message.channel }}
+              </span>
+            </td>
             <td>
               {% if message.status == "PENDING" %}
-                <span class="badge bg-warning text-dark">{{ message.status }}</span>
+                <span class="badge-status pending">PENDING</span>
               {% elif message.status == "SENT" %}
-                <span class="badge bg-success">{{ message.status }}</span>
+                <span class="badge-status sent">SENT</span>
               {% else %}
-                <span class="badge bg-danger">{{ message.status }}</span>
+                <span class="badge-status failed">FAILED</span>
               {% endif %}
             </td>
-            <td>{{ message.scheduled_for|default:"-" }}</td>
-            <td>{{ message.sent_at|default:"-" }}</td>
+            <td style="color:var(--text-muted);font-size:.83rem;">{{ message.scheduled_for|default:"—" }}</td>
+            <td style="color:var(--text-muted);font-size:.83rem;">{{ message.sent_at|default:"—" }}</td>
           </tr>
         {% empty %}
-          <tr><td colspan="6" class="text-center">No messages found.</td></tr>
+          <tr>
+            <td colspan="6" class="text-center py-5" style="color:var(--text-muted);">
+              <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+              No messages found.
+            </td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Ensure defaults if data is empty
-  const labels = {{ chart_labels|safe|default:"[]" }};
-  const sentData = {{ sent_data|safe|default:"[]" }};
-  const failedData = {{ failed_data|safe|default:"[]" }};
-  const channelLabels = {{ channel_labels|safe|default:"[]" }};
-  const channelSent = {{ channel_sent|safe|default:"[]" }};
-  const channelFailed = {{ channel_failed|safe|default:"[]" }};
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.color = '#64748b';
+
+  const labels       = {{ chart_labels|safe|default:"[]" }};
+  const sentData     = {{ sent_data|safe|default:"[]" }};
+  const failedData   = {{ failed_data|safe|default:"[]" }};
+  const channelLabels  = {{ channel_labels|safe|default:"[]" }};
+  const channelSent    = {{ channel_sent|safe|default:"[]" }};
+  const channelFailed  = {{ channel_failed|safe|default:"[]" }};
   const channelPending = {{ channel_pending|safe|default:"[]" }};
 
-  // Donut Chart: Delivery Status
   new Chart(document.getElementById('statusDonut'), {
     type: 'doughnut',
     data: {
       labels: ['Sent', 'Failed', 'Pending'],
-      datasets: [{
-        data: [{{ sent_messages|default:0 }}, {{ failed_messages|default:0 }}, {{ pending_messages|default:0 }}],
-        backgroundColor: ['#28a745', '#dc3545', '#ffc107']
+      datasets: [{ data: [{{ sent_messages|default:0 }}, {{ failed_messages|default:0 }}, {{ pending_messages|default:0 }}],
+        backgroundColor: ['#10b981','#ef4444','#f59e0b'],
+        borderWidth: 0, hoverOffset: 4
       }]
     },
-    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    options: { responsive: true, cutout: '68%', plugins: { legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } } } }
   });
 
-  // Line Chart: Messages Over Time
   new Chart(document.getElementById('trendChart'), {
     type: 'line',
     data: {
       labels: labels,
       datasets: [
-        { label: 'Sent', data: sentData, fill: true, backgroundColor: 'rgba(40,167,69,0.2)', borderColor: '#28a745', tension: 0.3 },
-        { label: 'Failed', data: failedData, fill: true, backgroundColor: 'rgba(220,53,69,0.2)', borderColor: '#dc3545', tension: 0.3 }
+        { label: 'Sent', data: sentData, fill: true,
+          backgroundColor: 'rgba(16,185,129,.1)', borderColor: '#10b981', borderWidth: 2, tension: 0.4, pointRadius: 3 },
+        { label: 'Failed', data: failedData, fill: true,
+          backgroundColor: 'rgba(239,68,68,.08)', borderColor: '#ef4444', borderWidth: 2, tension: 0.4, pointRadius: 3 }
       ]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
-      scales: { y: { beginAtZero: true } }
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } },
+      scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
     }
   });
 
-  // Bar Chart: Channel Breakdown
   new Chart(document.getElementById('channelBar'), {
     type: 'bar',
     data: {
       labels: channelLabels,
       datasets: [
-        { label: 'Sent', data: channelSent, backgroundColor: '#28a745' },
-        { label: 'Failed', data: channelFailed, backgroundColor: '#dc3545' },
-        { label: 'Pending', data: channelPending, backgroundColor: '#ffc107' }
+        { label: 'Sent',    data: channelSent,    backgroundColor: '#10b981' },
+        { label: 'Failed',  data: channelFailed,  backgroundColor: '#ef4444' },
+        { label: 'Pending', data: channelPending, backgroundColor: '#f59e0b' }
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
-      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } },
+      scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { color: '#f1f5f9' } } }
     }
   });
 </script>
