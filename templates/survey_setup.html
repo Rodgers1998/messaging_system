@@ -1,7 +1,69 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Surveys – SHOFCO{% endblock %}
-{% block topbar_title %}WhatsApp Surveys{% endblock %}
+{% block title %}Surveys – SHOFCO
+<script>
+function onChannelChange(radio) {
+  // Highlight selected card
+  ['lbl_whatsapp','lbl_template','lbl_sms'].forEach(id => {
+    const lbl = document.getElementById(id);
+    if (lbl) {
+      lbl.style.borderColor = 'var(--border)';
+      lbl.style.background = '#f8fafc';
+    }
+  });
+  const map = {WHATSAPP:'lbl_whatsapp', WHATSAPP_TEMPLATE:'lbl_template', SMS:'lbl_sms'};
+  const active = document.getElementById(map[radio.value]);
+  if (active) {
+    active.style.borderColor = 'var(--brand)';
+    active.style.background = 'var(--brand-light)';
+  }
+  // Show/hide template name field
+  document.getElementById('templateNameField').style.display =
+    radio.value === 'WHATSAPP_TEMPLATE' ? 'block' : 'none';
+  // Require template_name only when needed
+  const tnField = document.getElementById('template_name');
+  if (tnField) tnField.required = radio.value === 'WHATSAPP_TEMPLATE';
+}
+// Init on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const checked = document.querySelector('input[name="channel"]:checked');
+  if (checked) onChannelChange(checked);
+});
+</script>
+
+{% endblock %}
+{% block topbar_title %}WhatsApp Surveys
+<script>
+function onChannelChange(radio) {
+  // Highlight selected card
+  ['lbl_whatsapp','lbl_template','lbl_sms'].forEach(id => {
+    const lbl = document.getElementById(id);
+    if (lbl) {
+      lbl.style.borderColor = 'var(--border)';
+      lbl.style.background = '#f8fafc';
+    }
+  });
+  const map = {WHATSAPP:'lbl_whatsapp', WHATSAPP_TEMPLATE:'lbl_template', SMS:'lbl_sms'};
+  const active = document.getElementById(map[radio.value]);
+  if (active) {
+    active.style.borderColor = 'var(--brand)';
+    active.style.background = 'var(--brand-light)';
+  }
+  // Show/hide template name field
+  document.getElementById('templateNameField').style.display =
+    radio.value === 'WHATSAPP_TEMPLATE' ? 'block' : 'none';
+  // Require template_name only when needed
+  const tnField = document.getElementById('template_name');
+  if (tnField) tnField.required = radio.value === 'WHATSAPP_TEMPLATE';
+}
+// Init on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const checked = document.querySelector('input[name="channel"]:checked');
+  if (checked) onChannelChange(checked);
+});
+</script>
+
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -42,6 +104,51 @@
                 <option value="{{ s.id }}" {% if s.id == selected_survey.id %}selected{% endif %}>{{ s.title }}</option>
               {% endfor %}
             </select>
+          </div>
+
+          <!-- Channel Selector -->
+          <div class="mb-3">
+            <label class="form-label">Send Via</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;" id="channelSelector">
+              <label style="flex:1;min-width:120px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border .15s,background .15s;" id="lbl_whatsapp">
+                <input type="radio" name="channel" value="WHATSAPP" checked onchange="onChannelChange(this)"
+                       style="accent-color:var(--brand);width:16px;height:16px;flex-shrink:0;">
+                <span>
+                  <span style="display:block;font-weight:700;font-size:.88rem;color:var(--text-main);">
+                    <i class="bi bi-whatsapp" style="color:#25d366;"></i> WhatsApp
+                  </span>
+                  <span style="font-size:.75rem;color:var(--text-muted);">24hr session required</span>
+                </span>
+              </label>
+              <label style="flex:1;min-width:120px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border .15s,background .15s;" id="lbl_template">
+                <input type="radio" name="channel" value="WHATSAPP_TEMPLATE" onchange="onChannelChange(this)"
+                       style="accent-color:var(--brand);width:16px;height:16px;flex-shrink:0;">
+                <span>
+                  <span style="display:block;font-weight:700;font-size:.88rem;color:var(--text-main);">
+                    <i class="bi bi-whatsapp" style="color:#25d366;"></i> WA Template
+                  </span>
+                  <span style="font-size:.75rem;color:var(--text-muted);">Reach anyone, anytime</span>
+                </span>
+              </label>
+              <label style="flex:1;min-width:120px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border .15s,background .15s;" id="lbl_sms">
+                <input type="radio" name="channel" value="SMS" onchange="onChannelChange(this)"
+                       style="accent-color:var(--brand);width:16px;height:16px;flex-shrink:0;">
+                <span>
+                  <span style="display:block;font-weight:700;font-size:.88rem;color:var(--text-main);">
+                    <i class="bi bi-phone" style="color:var(--brand);"></i> SMS
+                  </span>
+                  <span style="font-size:.75rem;color:var(--text-muted);">Works on any phone</span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Template name field — only shown for WHATSAPP_TEMPLATE -->
+          <div class="mb-3" id="templateNameField" style="display:none;">
+            <label class="form-label" for="template_name">WhatsApp Template Name</label>
+            <input type="text" class="form-control" id="template_name" name="template_name"
+                   placeholder="e.g. survey_invite">
+            <small class="text-muted">Must match the approved template name in your Infobip dashboard exactly.</small>
           </div>
 
           <div class="mb-3">
@@ -142,39 +249,45 @@ Please answer the questions below by replying to this chat.</textarea>
             <tr>
               <th>Phone</th>
               <th>Name</th>
+              <th>Channel</th>
               <th>Progress</th>
               <th>Submitted</th>
             </tr>
           </thead>
           <tbody>
-            {% if responses %}
-              {% for r in responses %}
-                {% with unanswered_count=0 name="" %}
-                  {% for a in r.answers.all %}
-                    {% if not a.answer_text %}
-                      {% with unanswered_count|add:1 as unanswered_count %}{% endwith %}
+            {% if enriched_responses %}
+              {% for item in enriched_responses %}
+                <tr>
+                  <td style="font-weight:500;font-size:.85rem;">{{ item.phone }}</td>
+                  <td style="font-size:.85rem;">{{ item.name|default:"—" }}</td>
+                  <td>
+                    {% if item.channel == 'SMS' %}
+                      <span style="font-size:.75rem;font-weight:600;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:20px;">
+                        <i class="bi bi-phone"></i> SMS
+                      </span>
+                    {% elif item.channel == 'WHATSAPP_TEMPLATE' %}
+                      <span style="font-size:.75rem;font-weight:600;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:20px;">
+                        <i class="bi bi-whatsapp"></i> WA Template
+                      </span>
+                    {% else %}
+                      <span style="font-size:.75rem;font-weight:600;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:20px;">
+                        <i class="bi bi-whatsapp"></i> WhatsApp
+                      </span>
                     {% endif %}
-                    {% if "name" in a.question.text|lower %}
-                      {% with a.answer_text as name %}{% endwith %}
+                  </td>
+                  <td>
+                    {% if item.done %}
+                      <span class="badge-status sent">✓ Done</span>
+                    {% else %}
+                      <span class="badge-status pending">{{ item.unanswered }} of {{ item.total }} left</span>
                     {% endif %}
-                  {% endfor %}
-                  <tr>
-                    <td style="font-weight:500;font-size:.85rem;">{{ r.beneficiary.phone_number }}</td>
-                    <td style="font-size:.85rem;">{{ name|default:"—" }}</td>
-                    <td>
-                      {% if unanswered_count == 0 %}
-                        <span class="badge-status sent">✓ Done</span>
-                      {% else %}
-                        <span class="badge-status pending">{{ unanswered_count }} left</span>
-                      {% endif %}
-                    </td>
-                    <td style="color:var(--text-muted);font-size:.8rem;">{{ r.submitted_at|date:"d M, H:i"|default:"—" }}</td>
-                  </tr>
-                {% endwith %}
+                  </td>
+                  <td style="color:var(--text-muted);font-size:.8rem;">{{ item.submitted_at|date:"d M, H:i"|default:"—" }}</td>
+                </tr>
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="4" class="text-center py-5" style="color:var(--text-muted);">
+                <td colspan="5" class="text-center py-5" style="color:var(--text-muted);">
                   <i class="bi bi-chat-left-dots" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
                   No responses yet.
                 </td>
@@ -202,4 +315,35 @@ Please answer the questions below by replying to this chat.</textarea>
   </div>
 
 </div>
+
+<script>
+function onChannelChange(radio) {
+  // Highlight selected card
+  ['lbl_whatsapp','lbl_template','lbl_sms'].forEach(id => {
+    const lbl = document.getElementById(id);
+    if (lbl) {
+      lbl.style.borderColor = 'var(--border)';
+      lbl.style.background = '#f8fafc';
+    }
+  });
+  const map = {WHATSAPP:'lbl_whatsapp', WHATSAPP_TEMPLATE:'lbl_template', SMS:'lbl_sms'};
+  const active = document.getElementById(map[radio.value]);
+  if (active) {
+    active.style.borderColor = 'var(--brand)';
+    active.style.background = 'var(--brand-light)';
+  }
+  // Show/hide template name field
+  document.getElementById('templateNameField').style.display =
+    radio.value === 'WHATSAPP_TEMPLATE' ? 'block' : 'none';
+  // Require template_name only when needed
+  const tnField = document.getElementById('template_name');
+  if (tnField) tnField.required = radio.value === 'WHATSAPP_TEMPLATE';
+}
+// Init on page load
+window.addEventListener('DOMContentLoaded', () => {
+  const checked = document.querySelector('input[name="channel"]:checked');
+  if (checked) onChannelChange(checked);
+});
+</script>
+
 {% endblock %}
