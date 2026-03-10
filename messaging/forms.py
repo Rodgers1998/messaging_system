@@ -74,9 +74,9 @@ class MessageForm(forms.ModelForm):
     def clean_scheduled_for(self):
         scheduled = self.cleaned_data.get("scheduled_for")
 
-        # If no schedule provided, default to now
+        # If blank, return None — send immediately
         if not scheduled:
-            return timezone.now()
+            return None
 
         # Prevent scheduling in the past
         if scheduled < timezone.now():

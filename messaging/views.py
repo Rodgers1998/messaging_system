@@ -159,7 +159,7 @@ def messages_home(request):
     messages_list = Message.objects.all().order_by("-sent_at")[:50]
     beneficiaries = Beneficiary.objects.all()
     return render(request, "messages.html", {
-        "messages": messages_list,
+        "messages_list": messages_list,   # renamed: avoid overwriting Django flash messages
         "beneficiaries": beneficiaries,
         "message_form": MessageForm(),
         "upload_form": BulkUploadForm(),
