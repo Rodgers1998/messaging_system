@@ -183,10 +183,6 @@ def send_ui_message(request):
     beneficiary = form.cleaned_data["recipient"]
     scheduled_for = form.cleaned_data.get("scheduled_for")
 
-    phone_number = str(beneficiary.phone_number).strip()
-    if channel == "WHATSAPP" and not phone_number.startswith("+"):
-        phone_number = "+" + phone_number
-
     if scheduled_for:
         if timezone.is_naive(scheduled_for):
             scheduled_for = timezone.make_aware(scheduled_for, timezone.get_current_timezone())
@@ -207,7 +203,7 @@ def send_ui_message(request):
 
     if not scheduled_for:
         try:
-            logger.info(f"Sending message to {phone_number} via {channel}")
+            logger.info(f"Sending message to {beneficiary.phone_number} via {channel}")
             success, response = send_message(message)
             logger.info(f"Send result: success={success}, response={response}")
             if success:
@@ -220,7 +216,7 @@ def send_ui_message(request):
                 message.save()
                 messages.error(request, f"Failed to send message to {beneficiary.name}.")
         except Exception as e:
-            logger.exception(f"Failed to send message to {phone_number}")
+            logger.exception(f"Failed to send message to {beneficiary.phone_number}")
             message.status = "FAILED"
             message.save()
             messages.error(request, f"Error while sending message to {beneficiary.name}.")
@@ -259,9 +255,6 @@ def upload_recipients_view(request):
         phone = str(row.get("phone_number", "")).strip()
         if not phone:
             continue
-
-        if channel == "WHATSAPP" and not phone.startswith("+"):
-            phone = "+" + phone
 
         beneficiary, created = Beneficiary.objects.get_or_create(
             phone_number=phone,

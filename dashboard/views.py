@@ -1,3 +1,5 @@
+# dashboard/views.py
+import json
 from django.shortcuts import render
 from django.core.paginator import Paginator
 from django.db.models import Count
@@ -15,7 +17,7 @@ def dashboard_home(request):
     pending_messages = Message.objects.filter(status='PENDING').count()
     total_beneficiaries = Beneficiary.objects.count()
 
-    # ----- SEARCH -----
+    # Search
     search_query = request.GET.get("q", "")
     messages_list = Message.objects.annotate(
         order_time=Coalesce('sent_at', 'scheduled_for', Value(now()))
@@ -24,14 +26,13 @@ def dashboard_home(request):
     if search_query:
         messages_list = messages_list.filter(content__icontains=search_query)
 
-    # ----- PAGINATION (10 per page) -----
+    # Pagination
     paginator = Paginator(messages_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # ----- ANALYTICS DATA -----
-    # Default: group by month
-    group_by = request.GET.get("group_by", "month")  # options: day, week, month
+    # Analytics grouping
+    group_by = request.GET.get("group_by", "month")
     if group_by == "day":
         trunc_func = TruncDay("sent_at")
     elif group_by == "week":
@@ -47,16 +48,21 @@ def dashboard_home(request):
         .order_by("period")
     )
 
-    # Structure for chart.js
-    chart_labels = sorted(list(set([a["period"].strftime("%Y-%m-%d") for a in analytics])))
+    chart_labels_raw = sorted(list(set([
+        a["period"].strftime("%Y-%m-%d") for a in analytics
+    ])))
+
     sent_data = []
     failed_data = []
-
-    for label in chart_labels:
-        sent_count = next((a["count"] for a in analytics if a["period"].strftime("%Y-%m-%d") == label and a["status"] == "SENT"), 0)
-        failed_count = next((a["count"] for a in analytics if a["period"].strftime("%Y-%m-%d") == label and a["status"] == "FAILED"), 0)
-        sent_data.append(sent_count)
-        failed_data.append(failed_count)
+    for label in chart_labels_raw:
+        sent_data.append(next(
+            (a["count"] for a in analytics
+             if a["period"].strftime("%Y-%m-%d") == label and a["status"] == "SENT"), 0
+        ))
+        failed_data.append(next(
+            (a["count"] for a in analytics
+             if a["period"].strftime("%Y-%m-%d") == label and a["status"] == "FAILED"), 0
+        ))
 
     context = {
         'total_messages': total_messages,
@@ -66,11 +72,12 @@ def dashboard_home(request):
         'total_beneficiaries': total_beneficiaries,
         'messages': page_obj,
         'search_query': search_query,
+        'group_by': group_by,
 
-        # Chart data
-        'chart_labels': chart_labels,
-        'sent_data': sent_data,
-        'failed_data': failed_data,
+        # Serialized for Chart.js — must be JSON strings
+        'chart_labels': json.dumps(chart_labels_raw),
+        'sent_data': json.dumps(sent_data),
+        'failed_data': json.dumps(failed_data),
     }
 
     return render(request, 'home.html', context)

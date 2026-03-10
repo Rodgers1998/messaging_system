@@ -3,7 +3,6 @@ from django.contrib import admin, messages
 from import_export.admin import ImportExportMixin
 from import_export import resources
 from .models import Beneficiary
-from messaging.utils.infobip import sync_contact_to_infobip 
 
 class BeneficiaryResource(resources.ModelResource):
     class Meta:
@@ -19,16 +18,18 @@ class BeneficiaryAdmin(ImportExportMixin, admin.ModelAdmin):
     actions = ['sync_to_infobip']
 
     def sync_to_infobip(self, request, queryset):
+        from messaging.utils.infobip import sync_contact_to_infobip
         synced = 0
         failed = 0
 
         for beneficiary in queryset:
             if beneficiary.infobip_synced:
                 continue
-            status, _ = sync_contact_to_infobip(beneficiary.name, beneficiary.phone_number)
-            if 200 <= status < 300:
+            success, _ = sync_contact_to_infobip(beneficiary.name, beneficiary.phone_number)
+            # sync_contact_to_infobip returns (bool, data) — not (status_code, data)
+            if success:
                 beneficiary.infobip_synced = True
-                beneficiary.save()
+                beneficiary.save(update_fields=['infobip_synced'])
                 synced += 1
             else:
                 failed += 1

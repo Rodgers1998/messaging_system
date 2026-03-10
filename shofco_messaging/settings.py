@@ -127,5 +127,5 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 LOGIN_URL = 'messaging:login'
 
-LOGIN_REDIRECT_URL = 'messaging:dashboard_home'  # or wherever users go after login
-LOGOUT_REDIRECT_URL = 'messaging:login' 
+LOGIN_REDIRECT_URL = 'dashboard_home'  # or wherever users go after login
+LOGOUT_REDIRECT_URL = 'messaging:login'
