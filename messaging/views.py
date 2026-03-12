@@ -13,6 +13,7 @@ from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
 from django.core.paginator import Paginator
 
 from .forms import RegisterForm, BulkUploadForm, MessageForm
+from messaging.utils.cloudinary_utils import upload_media_to_cloudinary
 from beneficiaries.models import Beneficiary
 from messaging.models import Message
 from messaging.services.messaging_service import send_message
@@ -191,12 +192,22 @@ def send_ui_message(request):
             return redirect("messaging:messages_home")
 
     personalized_content = content.replace("{{1}}", beneficiary.name)
+
+    # Upload media file to Cloudinary to get a permanent public URL
+    # (Render's filesystem is ephemeral; local paths are unreachable by Infobip)
+    final_media_url = media_url  # user may have typed a URL directly
+    if media and not final_media_url:
+        final_media_url = upload_media_to_cloudinary(media)
+        if not final_media_url:
+            messages.error(request, "Failed to upload image. Please try again.")
+            return redirect("messaging:messages_home")
+
     message = Message.objects.create(
         recipient=beneficiary,
         content=personalized_content,
         channel=channel,
         media=media if media else None,
-        media_url=media_url,
+        media_url=final_media_url,
         status="PENDING",
         scheduled_for=scheduled_for,
     )
@@ -243,18 +254,37 @@ def upload_recipients_view(request):
     media_url = form.cleaned_data.get("media_url")
 
     try:
-        data = pd.read_csv(file) if file.name.endswith(".csv") else pd.read_excel(file)
+        if file.name.endswith(".csv"):
+            data = pd.read_csv(file, dtype={"phone_number": str})
+        else:
+            # dtype=str prevents Excel from converting phone numbers to scientific notation
+            data = pd.read_excel(file, dtype={"phone_number": str})
     except Exception as e:
         logger.error(f"File read error: {str(e)}")
         messages.error(request, "Could not read file. Ensure it's a valid CSV/Excel.")
         return redirect("messaging:messages_home")
 
+    from messaging.utils.infobip import _format_phone
+
+    # Upload media once before the loop — same URL reused for all recipients
+    bulk_media_url = media_url
+    if media and not bulk_media_url:
+        bulk_media_url = upload_media_to_cloudinary(media)
+        if not bulk_media_url:
+            messages.error(request, "Failed to upload image. Please try again.")
+            return redirect("messaging:messages_home")
+
+    from messaging.utils.infobip import _format_phone
     created_count, sent_count, failed_count = 0, 0, 0
     for _, row in data.iterrows():
         name = str(row.get("name", "")).strip()
         phone = str(row.get("phone_number", "")).strip()
         if not phone:
             continue
+
+        # Normalize to E.164 BEFORE get_or_create to prevent duplicates
+        # e.g. 0712345678, 254712345678, +254712345678 all → +254712345678
+        phone = _format_phone(phone)
 
         beneficiary, created = Beneficiary.objects.get_or_create(
             phone_number=phone,
@@ -265,12 +295,15 @@ def upload_recipients_view(request):
 
         if content:
             personalized_content = content.replace("{{1}}", beneficiary.name)
+
+            # Upload media once — reuse the same Cloudinary URL for all recipients
+            # (bulk_media_url is set before the loop below)
             message = Message.objects.create(
                 recipient=beneficiary,
                 content=personalized_content,
                 channel=channel,
                 media=media if media else None,
-                media_url=media_url,
+                media_url=bulk_media_url,
                 status="PENDING",
             )
             try:
