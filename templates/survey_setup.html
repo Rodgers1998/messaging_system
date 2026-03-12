@@ -1,74 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Surveys – SHOFCO
-<script>
-function onChannelChange(radio) {
-  // Highlight selected card
-  ['lbl_whatsapp','lbl_template','lbl_sms'].forEach(id => {
-    const lbl = document.getElementById(id);
-    if (lbl) {
-      lbl.style.borderColor = 'var(--border)';
-      lbl.style.background = '#f8fafc';
-    }
-  });
-  const map = {WHATSAPP:'lbl_whatsapp', WHATSAPP_TEMPLATE:'lbl_template', SMS:'lbl_sms'};
-  const active = document.getElementById(map[radio.value]);
-  if (active) {
-    active.style.borderColor = 'var(--brand)';
-    active.style.background = 'var(--brand-light)';
-  }
-  // Show/hide template name field
-  document.getElementById('templateNameField').style.display =
-    radio.value === 'WHATSAPP_TEMPLATE' ? 'block' : 'none';
-  // Require template_name only when needed
-  const tnField = document.getElementById('template_name');
-  if (tnField) tnField.required = radio.value === 'WHATSAPP_TEMPLATE';
-}
-// Init on page load
-window.addEventListener('DOMContentLoaded', () => {
-  const checked = document.querySelector('input[name="channel"]:checked');
-  if (checked) onChannelChange(checked);
-});
-</script>
-
-{% endblock %}
-{% block topbar_title %}WhatsApp Surveys
-<script>
-function onChannelChange(radio) {
-  // Highlight selected card
-  ['lbl_whatsapp','lbl_template','lbl_sms'].forEach(id => {
-    const lbl = document.getElementById(id);
-    if (lbl) {
-      lbl.style.borderColor = 'var(--border)';
-      lbl.style.background = '#f8fafc';
-    }
-  });
-  const map = {WHATSAPP:'lbl_whatsapp', WHATSAPP_TEMPLATE:'lbl_template', SMS:'lbl_sms'};
-  const active = document.getElementById(map[radio.value]);
-  if (active) {
-    active.style.borderColor = 'var(--brand)';
-    active.style.background = 'var(--brand-light)';
-  }
-  // Show/hide template name field
-  document.getElementById('templateNameField').style.display =
-    radio.value === 'WHATSAPP_TEMPLATE' ? 'block' : 'none';
-  // Require template_name only when needed
-  const tnField = document.getElementById('template_name');
-  if (tnField) tnField.required = radio.value === 'WHATSAPP_TEMPLATE';
-}
-// Init on page load
-window.addEventListener('DOMContentLoaded', () => {
-  const checked = document.querySelector('input[name="channel"]:checked');
-  if (checked) onChannelChange(checked);
-});
-</script>
-
-{% endblock %}
+{% block title %}Surveys – SHOFCO{% endblock %}
+{% block topbar_title %}Surveys{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <h1>WhatsApp Surveys</h1>
-  <p>Deploy surveys to beneficiaries and view incoming responses.</p>
+  <h1>Surveys</h1>
+  <p>Select a survey, choose your channel, and deploy to beneficiaries.</p>
 </div>
 
 {% if messages %}
@@ -82,118 +20,189 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 {% endif %}
 
-<div class="row g-4">
+<!-- ══════════════════════════════════════════
+     TOP ROW — Survey Picker + Stats
+══════════════════════════════════════════ -->
+<div class="row g-3 mb-4">
 
-  <!-- ── Survey Setup ── -->
-  <div class="col-lg-6">
-    <div class="card h-100">
+  <!-- Survey selector cards -->
+  <div class="col-12">
+    <div class="card">
       <div class="card-header d-flex align-items-center gap-2">
         <span style="width:28px;height:28px;background:var(--brand-light);border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--brand);">
-          <i class="bi bi-clipboard-check-fill" style="font-size:.8rem;"></i>
+          <i class="bi bi-clipboard-data-fill" style="font-size:.8rem;"></i>
         </span>
-        Start WhatsApp Survey
+        <span style="font-weight:700;">Select a Survey</span>
       </div>
       <div class="card-body">
+        {% if surveys %}
+          <div class="row g-3">
+            {% for s in surveys %}
+              <div class="col-md-4 col-sm-6">
+                <a href="?survey_id={{ s.id }}"
+                   style="text-decoration:none;">
+                  <div style="border:2px solid {% if s.id == selected_survey.id %}var(--brand){% else %}var(--border){% endif %};
+                              background:{% if s.id == selected_survey.id %}var(--brand-light){% else %}#fff{% endif %};
+                              border-radius:12px;padding:16px;cursor:pointer;transition:all .15s;height:100%;"
+                       onmouseover="this.style.borderColor='var(--brand)';this.style.background='var(--brand-light)';"
+                       onmouseout="this.style.borderColor='{% if s.id == selected_survey.id %}var(--brand){% else %}var(--border){% endif %}';this.style.background='{% if s.id == selected_survey.id %}var(--brand-light){% else %}#fff{% endif %}';">
+                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                      <div style="width:38px;height:38px;background:{% if s.id == selected_survey.id %}var(--brand){% else %}var(--brand-light){% endif %};border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="bi bi-clipboard-check" style="color:{% if s.id == selected_survey.id %}#fff{% else %}var(--brand){% endif %};font-size:1rem;"></i>
+                      </div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--text-main);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                          {{ s.title }}
+                        </div>
+                        <div style="font-size:.75rem;color:var(--text-muted);">
+                          {{ s.questions.count }} question{{ s.questions.count|pluralize }}
+                          &nbsp;·&nbsp;
+                          {{ s.responses.count }} response{{ s.responses.count|pluralize }}
+                        </div>
+                        {% if s.description %}
+                          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            {{ s.description|truncatechars:50 }}
+                          </div>
+                        {% endif %}
+                      </div>
+                      {% if s.id == selected_survey.id %}
+                        <i class="bi bi-check-circle-fill" style="color:var(--brand);font-size:1.1rem;flex-shrink:0;"></i>
+                      {% endif %}
+                    </div>
+                  </div>
+                </a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-4" style="color:var(--text-muted);">
+            <i class="bi bi-clipboard-x" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+            No surveys yet. <a href="/admin/surveys/survey/add/" target="_blank">Create one in Admin →</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if selected_survey %}
+<!-- ══════════════════════════════════════════
+     MAIN ROW — Send Form + Responses
+══════════════════════════════════════════ -->
+<div class="row g-4">
+
+  <!-- ── Left: Send Form ── -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <span style="width:28px;height:28px;background:var(--brand-light);border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--brand);">
+          <i class="bi bi-send-fill" style="font-size:.75rem;"></i>
+        </span>
+        <span style="font-weight:700;">Send: {{ selected_survey.title }}</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Survey questions preview -->
+        {% if selected_survey.questions.exists %}
+          <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:20px;">
+            <div style="font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+              Survey Questions
+            </div>
+            {% for q in selected_survey.questions.all %}
+              <div style="display:flex;gap:10px;{% if not forloop.last %}margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);{% endif %}">
+                <span style="width:22px;height:22px;background:var(--brand);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;">
+                  {{ forloop.counter }}
+                </span>
+                <div style="flex:1;">
+                  <div style="font-size:.83rem;font-weight:600;color:var(--text-main);">{{ q.text }}</div>
+                  <div style="font-size:.72rem;color:var(--text-muted);margin-top:2px;">
+                    {% if q.question_type == "CHOICE" %}
+                      <i class="bi bi-list-check"></i> Multiple choice
+                      {% if q.choices.exists %}
+                        — {{ q.choices.all|length }} options
+                      {% endif %}
+                    {% else %}
+                      <i class="bi bi-textarea-t"></i> Text answer
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-warning" style="font-size:.85rem;">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            This survey has no questions yet.
+            <a href="/admin/surveys/survey/{{ selected_survey.id }}/change/" target="_blank">Add questions in Admin →</a>
+          </div>
+        {% endif %}
+
         <form method="POST" action="{% url 'survey:start' %}">
           {% csrf_token %}
-
-          <div class="mb-3">
-            <label class="form-label" for="survey_id">Select Survey</label>
-            <select class="form-select" id="survey_id" name="survey_id" required>
-              {% for s in surveys %}
-                <option value="{{ s.id }}" {% if s.id == selected_survey.id %}selected{% endif %}>{{ s.title }}</option>
-              {% endfor %}
-            </select>
-          </div>
+          <input type="hidden" name="survey_id" value="{{ selected_survey.id }}">
 
           <!-- Channel Selector -->
           <div class="mb-3">
-            <label class="form-label">Send Via</label>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;" id="channelSelector">
-              <label style="flex:1;min-width:120px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border .15s,background .15s;" id="lbl_whatsapp">
-                <input type="radio" name="channel" value="WHATSAPP" checked onchange="onChannelChange(this)"
-                       style="accent-color:var(--brand);width:16px;height:16px;flex-shrink:0;">
-                <span>
-                  <span style="display:block;font-weight:700;font-size:.88rem;color:var(--text-main);">
-                    <i class="bi bi-whatsapp" style="color:#25d366;"></i> WhatsApp
-                  </span>
-                  <span style="font-size:.75rem;color:var(--text-muted);">24hr session required</span>
-                </span>
-              </label>
-              <label style="flex:1;min-width:120px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border .15s,background .15s;" id="lbl_template">
-                <input type="radio" name="channel" value="WHATSAPP_TEMPLATE" onchange="onChannelChange(this)"
-                       style="accent-color:var(--brand);width:16px;height:16px;flex-shrink:0;">
-                <span>
-                  <span style="display:block;font-weight:700;font-size:.88rem;color:var(--text-main);">
-                    <i class="bi bi-whatsapp" style="color:#25d366;"></i> WA Template
-                  </span>
-                  <span style="font-size:.75rem;color:var(--text-muted);">Reach anyone, anytime</span>
-                </span>
-              </label>
-              <label style="flex:1;min-width:120px;display:flex;align-items:center;gap:10px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border .15s,background .15s;" id="lbl_sms">
+            <label class="form-label fw-semibold">Send Via</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;" id="channelSelector">
+
+              <label style="flex:1;min-width:100px;display:flex;align-items:center;gap:8px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;" id="lbl_sms">
                 <input type="radio" name="channel" value="SMS" onchange="onChannelChange(this)"
-                       style="accent-color:var(--brand);width:16px;height:16px;flex-shrink:0;">
+                       style="accent-color:var(--brand);width:15px;height:15px;flex-shrink:0;">
                 <span>
-                  <span style="display:block;font-weight:700;font-size:.88rem;color:var(--text-main);">
+                  <span style="display:block;font-weight:700;font-size:.82rem;color:var(--text-main);">
                     <i class="bi bi-phone" style="color:var(--brand);"></i> SMS
                   </span>
-                  <span style="font-size:.75rem;color:var(--text-muted);">Works on any phone</span>
+                  <span style="font-size:.7rem;color:var(--text-muted);">Any phone</span>
                 </span>
               </label>
+
+              <label style="flex:1;min-width:100px;display:flex;align-items:center;gap:8px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;" id="lbl_whatsapp">
+                <input type="radio" name="channel" value="WHATSAPP" checked onchange="onChannelChange(this)"
+                       style="accent-color:var(--brand);width:15px;height:15px;flex-shrink:0;">
+                <span>
+                  <span style="display:block;font-weight:700;font-size:.82rem;color:var(--text-main);">
+                    <i class="bi bi-whatsapp" style="color:#25d366;"></i> WhatsApp
+                  </span>
+                  <span style="font-size:.7rem;color:var(--text-muted);">24hr session</span>
+                </span>
+              </label>
+
+              <label style="flex:1;min-width:100px;display:flex;align-items:center;gap:8px;background:#f8fafc;border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;" id="lbl_template">
+                <input type="radio" name="channel" value="WHATSAPP_TEMPLATE" onchange="onChannelChange(this)"
+                       style="accent-color:var(--brand);width:15px;height:15px;flex-shrink:0;">
+                <span>
+                  <span style="display:block;font-weight:700;font-size:.82rem;color:var(--text-main);">
+                    <i class="bi bi-whatsapp" style="color:#25d366;"></i> WA Template
+                  </span>
+                  <span style="font-size:.7rem;color:var(--text-muted);">Reach anyone</span>
+                </span>
+              </label>
+
             </div>
           </div>
 
-          <!-- Template name field — only shown for WHATSAPP_TEMPLATE -->
+          <!-- Template name — only for WA Template -->
           <div class="mb-3" id="templateNameField" style="display:none;">
-            <label class="form-label" for="template_name">WhatsApp Template Name</label>
+            <label class="form-label" for="template_name">Template Name</label>
             <input type="text" class="form-control" id="template_name" name="template_name"
                    placeholder="e.g. survey_invite">
-            <small class="text-muted">Must match the approved template name in your Infobip dashboard exactly.</small>
+            <small class="text-muted">Must match approved template name in Infobip exactly.</small>
           </div>
 
+          <!-- Beneficiaries -->
           <div class="mb-3">
-            <label class="form-label" for="intro_text">Intro Message</label>
-            <textarea class="form-control" id="intro_text" name="intro_text" rows="3" required>👋 Hello, welcome to the SHOFCO WhatsApp Survey.
-
-Please answer the questions below by replying to this chat.</textarea>
-            <small class="text-muted">This is sent first to each recipient before the questions.</small>
-          </div>
-
-          {% if selected_survey.questions.exists %}
-          <div class="mb-3">
-            <label class="form-label">Survey Questions</label>
-            <div style="background:var(--bg);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:14px;">
-              {% for q in selected_survey.questions.all %}
-                <div>
-                  <div style="font-size:.82rem;font-weight:600;color:var(--text-muted);margin-bottom:6px;">
-                    {{ forloop.counter }}. {{ q.text }}
-                  </div>
-                  {% if q.question_type == "TEXT" %}
-                    <input type="text" class="form-control form-control-sm" name="question_{{ q.id }}" placeholder="Text answer">
-                  {% elif q.question_type == "CHOICE" %}
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
-                      {% for c in q.choices.all %}
-                        <label style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:.82rem;cursor:pointer;transition:border .12s;">
-                          <input type="radio" class="form-check-input m-0" name="question_{{ q.id }}" value="{{ c.text }}">
-                          {{ c.text }}
-                        </label>
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                </div>
-              {% endfor %}
+            <label class="form-label fw-semibold">Select Beneficiaries</label>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="selectAll()">Select All</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAll()">Clear</button>
+              <span id="selectedCount" style="font-size:.8rem;color:var(--text-muted);align-self:center;margin-left:4px;">0 selected</span>
             </div>
-          </div>
-          {% else %}
-            <p class="text-muted" style="font-size:.875rem;">No questions found for this survey.</p>
-          {% endif %}
-
-          <div class="mb-4">
-            <label for="recipients" class="form-label">Select Beneficiaries</label>
-            <select class="form-select" id="recipients" name="recipients" multiple required style="min-height:100px;">
+            <select class="form-select" id="recipients" name="recipients" multiple required
+                    style="min-height:120px;" onchange="updateCount()">
               {% if beneficiaries %}
                 {% for b in beneficiaries %}
-                  <option value="{{ b.id }}">{{ b }}</option>
+                  <option value="{{ b.id }}">{{ b.name }} — {{ b.phone_number }}</option>
                 {% endfor %}
               {% else %}
                 <option disabled>No beneficiaries found</option>
@@ -203,146 +212,260 @@ Please answer the questions below by replying to this chat.</textarea>
           </div>
 
           <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary flex-grow-1">
+            <button type="submit" class="btn btn-primary flex-grow-1"
+                    {% if not selected_survey.questions.exists %}disabled{% endif %}>
               <i class="bi bi-send me-1"></i> Send Survey
             </button>
-            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#testSend">
-              <i class="bi bi-phone me-1"></i> Test Send
+            <button type="button" class="btn btn-outline-secondary"
+                    data-bs-toggle="collapse" data-bs-target="#testSend">
+              <i class="bi bi-phone me-1"></i> Test
             </button>
           </div>
 
+          <!-- Test Send -->
           <div id="testSend" class="collapse mt-3">
             <div style="background:var(--bg);border-radius:10px;padding:14px;">
-              <label class="form-label">Test Phone Number</label>
+              <label class="form-label" style="font-size:.85rem;font-weight:600;">Test Phone Number</label>
               <div class="input-group">
-                <span class="input-group-text">+</span>
-                <input type="text" class="form-control" name="test_msisdn" placeholder="254712345678">
-                <button class="btn btn-outline-primary" formaction="{% url 'survey:test_send' %}" formmethod="post">Send Test</button>
+                <input type="text" class="form-control" name="test_msisdn" placeholder="e.g. 0712345678">
+                <button class="btn btn-outline-primary"
+                        formaction="{% url 'survey:test_send' %}"
+                        formmethod="post">Send Test</button>
               </div>
-              <small class="text-muted mt-1 d-block">E.164 format required (e.g., +254712345678).</small>
+              <small class="text-muted mt-1 d-block">Sends to your phone — useful to verify questions look correct.</small>
             </div>
           </div>
+
         </form>
       </div>
     </div>
   </div>
 
-  <!-- ── Responses ── -->
-  <div class="col-lg-6">
+  <!-- ── Right: Responses ── -->
+  <div class="col-lg-7">
     <div class="card h-100">
       <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
         <span style="display:flex;align-items:center;gap:8px;">
           <span style="width:28px;height:28px;background:#d1fae5;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--success);">
-            <i class="bi bi-chat-left-text-fill" style="font-size:.8rem;"></i>
+            <i class="bi bi-chat-left-text-fill" style="font-size:.75rem;"></i>
           </span>
-          Recent Survey Responses
+          <span style="font-weight:700;">Responses — {{ selected_survey.title }}</span>
         </span>
         <form method="get" action="" class="d-flex" style="gap:6px;">
+          <input type="hidden" name="survey_id" value="{{ selected_survey.id }}">
           <input type="text" name="q" class="form-control form-control-sm"
-                 placeholder="Search phone or name…" value="{{ request.GET.q|default:'' }}" style="width:170px;">
+                 placeholder="Search name or phone…"
+                 value="{{ request.GET.q|default:'' }}" style="width:160px;">
           <button class="btn btn-sm btn-outline-secondary" type="submit">Go</button>
         </form>
       </div>
+
+      <!-- Stats bar -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);">
+        {% with total=selected_survey.responses.count %}
+        <div style="flex:1;padding:12px 16px;text-align:center;border-right:1px solid var(--border);">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:var(--text-main);">{{ total }}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Total</div>
+        </div>
+        <div style="flex:1;padding:12px 16px;text-align:center;border-right:1px solid var(--border);">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:var(--success);">{{ enriched_responses|length }}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Showing</div>
+        </div>
+        <div style="flex:1;padding:12px 16px;text-align:center;">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.3rem;color:var(--brand);">
+            {% with done=0 %}
+              {{ enriched_responses|length }}
+            {% endwith %}
+          </div>
+          <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Active</div>
+        </div>
+        {% endwith %}
+      </div>
+
       <div class="table-responsive">
-        <table class="table mb-0">
+        <table class="table mb-0" style="font-size:.85rem;">
           <thead>
             <tr>
-              <th>Phone</th>
-              <th>Name</th>
-              <th>Channel</th>
-              <th>Progress</th>
-              <th>Submitted</th>
+              <th style="padding:10px 16px;">Beneficiary</th>
+              <th style="padding:10px 16px;">Channel</th>
+              <th style="padding:10px 16px;">Progress</th>
+              <th style="padding:10px 16px;">Answers</th>
+              <th style="padding:10px 16px;">Date</th>
             </tr>
           </thead>
           <tbody>
             {% if enriched_responses %}
               {% for item in enriched_responses %}
-                <tr>
-                  <td style="font-weight:500;font-size:.85rem;">{{ item.phone }}</td>
-                  <td style="font-size:.85rem;">{{ item.name|default:"—" }}</td>
-                  <td>
+                <tr style="cursor:pointer;" onclick="toggleAnswers('answers_{{ forloop.counter }}')">
+                  <td style="padding:10px 16px;">
+                    <div style="font-weight:600;color:var(--text-main);">{{ item.name }}</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);">{{ item.phone }}</div>
+                  </td>
+                  <td style="padding:10px 16px;">
                     {% if item.channel == 'SMS' %}
-                      <span style="font-size:.75rem;font-weight:600;background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:20px;">
+                      <span style="font-size:.73rem;font-weight:700;background:#eff6ff;color:#1d4ed8;padding:3px 8px;border-radius:20px;white-space:nowrap;">
                         <i class="bi bi-phone"></i> SMS
                       </span>
                     {% elif item.channel == 'WHATSAPP_TEMPLATE' %}
-                      <span style="font-size:.75rem;font-weight:600;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:20px;">
-                        <i class="bi bi-whatsapp"></i> WA Template
+                      <span style="font-size:.73rem;font-weight:700;background:#f0fdf4;color:#15803d;padding:3px 8px;border-radius:20px;white-space:nowrap;">
+                        <i class="bi bi-whatsapp"></i> Template
                       </span>
                     {% else %}
-                      <span style="font-size:.75rem;font-weight:600;background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:20px;">
+                      <span style="font-size:.73rem;font-weight:700;background:#f0fdf4;color:#15803d;padding:3px 8px;border-radius:20px;white-space:nowrap;">
                         <i class="bi bi-whatsapp"></i> WhatsApp
                       </span>
                     {% endif %}
                   </td>
-                  <td>
+                  <td style="padding:10px 16px;">
                     {% if item.done %}
-                      <span class="badge-status sent">✓ Done</span>
+                      <span style="display:inline-flex;align-items:center;gap:4px;font-size:.75rem;font-weight:700;color:var(--success);">
+                        <i class="bi bi-check-circle-fill"></i> Complete
+                      </span>
                     {% else %}
-                      <span class="badge-status pending">{{ item.unanswered }} of {{ item.total }} left</span>
+                      <div style="width:80px;">
+                        <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:3px;">
+                          {% if item.total > 0 %}
+                            <div style="height:100%;background:var(--brand);border-radius:3px;width:{% widthratio item.total|add:"-1"|add:item.unanswered|add:"-999" item.total 100 %}%;"></div>
+                          {% endif %}
+                        </div>
+                        <div style="font-size:.72rem;color:var(--text-muted);">{{ item.unanswered }} of {{ item.total }} left</div>
+                      </div>
                     {% endif %}
                   </td>
-                  <td style="color:var(--text-muted);font-size:.8rem;">{{ item.submitted_at|date:"d M, H:i"|default:"—" }}</td>
+                  <td style="padding:10px 16px;">
+                    <button type="button"
+                            style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:.72rem;color:var(--text-muted);cursor:pointer;"
+                            onclick="event.stopPropagation();toggleAnswers('answers_{{ forloop.counter }}')">
+                      View <i class="bi bi-chevron-down" id="icon_{{ forloop.counter }}"></i>
+                    </button>
+                  </td>
+                  <td style="padding:10px 16px;color:var(--text-muted);font-size:.78rem;white-space:nowrap;">
+                    {{ item.submitted_at|date:"d M y" }}<br>
+                    <span style="font-size:.7rem;">{{ item.submitted_at|date:"H:i" }}</span>
+                  </td>
+                </tr>
+                <!-- Expandable answers row -->
+                <tr id="answers_{{ forloop.counter }}" style="display:none;background:#f8fafc;">
+                  <td colspan="5" style="padding:0 16px 16px 16px;">
+                    <div style="padding-top:12px;">
+                      <div style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+                        Answers
+                      </div>
+                      {% for a in item.response.answers.all %}
+                        <div style="display:flex;gap:12px;{% if not forloop.last %}margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border);{% endif %}">
+                          <span style="width:20px;height:20px;background:var(--brand-light);color:var(--brand);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;">
+                            {{ forloop.counter }}
+                          </span>
+                          <div style="flex:1;">
+                            <div style="font-size:.78rem;font-weight:600;color:var(--text-muted);">{{ a.question.text }}</div>
+                            <div style="font-size:.83rem;color:var(--text-main);margin-top:2px;">
+                              {% if a.answer_text %}
+                                {{ a.answer_text }}
+                              {% else %}
+                                <span style="color:#94a3b8;font-style:italic;">No answer yet</span>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </div>
+                      {% empty %}
+                        <div style="font-size:.82rem;color:var(--text-muted);font-style:italic;">No answers recorded yet.</div>
+                      {% endfor %}
+                    </div>
+                  </td>
                 </tr>
               {% endfor %}
             {% else %}
               <tr>
                 <td colspan="5" class="text-center py-5" style="color:var(--text-muted);">
-                  <i class="bi bi-chat-left-dots" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
-                  No responses yet.
+                  <i class="bi bi-chat-left-dots" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                  No responses for this survey yet.<br>
+                  <small>Send the survey to beneficiaries to start collecting responses.</small>
                 </td>
               </tr>
             {% endif %}
           </tbody>
         </table>
       </div>
-      {% if page_obj %}
-      <div class="card-footer d-flex justify-content-between align-items-center" style="border-top:1px solid var(--border);padding:12px 16px;">
-        <span style="font-size:.82rem;color:var(--text-muted);">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+      {% if page_obj and page_obj.paginator.num_pages > 1 %}
+      <div class="card-footer d-flex justify-content-between align-items-center"
+           style="border-top:1px solid var(--border);padding:10px 16px;">
+        <span style="font-size:.8rem;color:var(--text-muted);">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
         <div style="display:flex;gap:6px;">
           {% if page_obj.has_previous %}
             <a class="btn btn-sm btn-outline-secondary"
-               href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">‹ Prev</a>
+               href="?survey_id={{ selected_survey.id }}&page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">‹ Prev</a>
           {% endif %}
           {% if page_obj.has_next %}
             <a class="btn btn-sm btn-outline-secondary"
-               href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next ›</a>
+               href="?survey_id={{ selected_survey.id }}&page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next ›</a>
           {% endif %}
         </div>
       </div>
       {% endif %}
+
     </div>
   </div>
 
 </div>
+{% endif %}
 
 <script>
+// ── Channel selector highlight ──
 function onChannelChange(radio) {
-  // Highlight selected card
   ['lbl_whatsapp','lbl_template','lbl_sms'].forEach(id => {
     const lbl = document.getElementById(id);
-    if (lbl) {
-      lbl.style.borderColor = 'var(--border)';
-      lbl.style.background = '#f8fafc';
-    }
+    if (lbl) { lbl.style.borderColor = 'var(--border)'; lbl.style.background = '#f8fafc'; }
   });
   const map = {WHATSAPP:'lbl_whatsapp', WHATSAPP_TEMPLATE:'lbl_template', SMS:'lbl_sms'};
   const active = document.getElementById(map[radio.value]);
-  if (active) {
-    active.style.borderColor = 'var(--brand)';
-    active.style.background = 'var(--brand-light)';
-  }
-  // Show/hide template name field
-  document.getElementById('templateNameField').style.display =
-    radio.value === 'WHATSAPP_TEMPLATE' ? 'block' : 'none';
-  // Require template_name only when needed
-  const tnField = document.getElementById('template_name');
-  if (tnField) tnField.required = radio.value === 'WHATSAPP_TEMPLATE';
+  if (active) { active.style.borderColor = 'var(--brand)'; active.style.background = 'var(--brand-light)'; }
+  const tf = document.getElementById('templateNameField');
+  if (tf) tf.style.display = radio.value === 'WHATSAPP_TEMPLATE' ? 'block' : 'none';
+  const tn = document.getElementById('template_name');
+  if (tn) tn.required = radio.value === 'WHATSAPP_TEMPLATE';
 }
-// Init on page load
+
+// ── Select all / clear beneficiaries ──
+function selectAll() {
+  const sel = document.getElementById('recipients');
+  for (let o of sel.options) o.selected = true;
+  updateCount();
+}
+function clearAll() {
+  const sel = document.getElementById('recipients');
+  for (let o of sel.options) o.selected = false;
+  updateCount();
+}
+function updateCount() {
+  const sel = document.getElementById('recipients');
+  const n = sel ? [...sel.options].filter(o => o.selected).length : 0;
+  const el = document.getElementById('selectedCount');
+  if (el) el.textContent = n + ' selected';
+}
+
+// ── Expandable answer rows ──
+function toggleAnswers(id) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  const num = id.replace('answers_','');
+  const icon = document.getElementById('icon_' + num);
+  if (row.style.display === 'none') {
+    row.style.display = 'table-row';
+    if (icon) icon.className = 'bi bi-chevron-up';
+  } else {
+    row.style.display = 'none';
+    if (icon) icon.className = 'bi bi-chevron-down';
+  }
+}
+
+// Init on load
 window.addEventListener('DOMContentLoaded', () => {
   const checked = document.querySelector('input[name="channel"]:checked');
   if (checked) onChannelChange(checked);
+  updateCount();
 });
 </script>
 

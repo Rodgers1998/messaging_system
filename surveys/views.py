@@ -82,9 +82,13 @@ def survey_setup(request):
     else:
         selected_survey = surveys.first()
 
+    # Filter responses by selected survey
     qs = Response.objects.select_related("beneficiary", "survey").prefetch_related(
-        "answers__question"
+        "answers__question__choices"
     ).order_by('-submitted_at')
+
+    if selected_survey:
+        qs = qs.filter(survey=selected_survey)
 
     q = request.GET.get('q')
     if q:
