@@ -193,20 +193,20 @@ def send_ui_message(request):
 
     personalized_content = content.replace("{{1}}", beneficiary.name)
 
-    # Upload media file to Cloudinary to get a permanent public URL
-    # (Render's filesystem is ephemeral; local paths are unreachable by Infobip)
-    final_media_url = media_url  # user may have typed a URL directly
+    # Upload to Cloudinary to get a permanent public URL Infobip can fetch
+    final_media_url = media_url  # user may have pasted a URL directly
     if media and not final_media_url:
-        final_media_url = upload_media_to_cloudinary(media)
+        final_media_url, _ = upload_media_to_cloudinary(media)
         if not final_media_url:
-            messages.error(request, "Failed to upload image. Please try again.")
+            messages.error(request, "Failed to upload image. Please try again or paste a direct URL.")
             return redirect("messaging:messages_home")
 
     message = Message.objects.create(
         recipient=beneficiary,
         content=personalized_content,
         channel=channel,
-        media=media if media else None,
+        # Don't re-save locally if already on Cloudinary — avoids Render ephemeral FS issues
+        media=media if (media and not final_media_url) else None,
         media_url=final_media_url,
         status="PENDING",
         scheduled_for=scheduled_for,
@@ -266,12 +266,12 @@ def upload_recipients_view(request):
 
     from messaging.utils.infobip import _format_phone
 
-    # Upload media once before the loop — same URL reused for all recipients
+    # Upload media ONCE before the loop — same Cloudinary URL reused for all recipients
     bulk_media_url = media_url
     if media and not bulk_media_url:
-        bulk_media_url = upload_media_to_cloudinary(media)
+        bulk_media_url, _ = upload_media_to_cloudinary(media)
         if not bulk_media_url:
-            messages.error(request, "Failed to upload image. Please try again.")
+            messages.error(request, "Failed to upload image. Please try again or paste a direct URL.")
             return redirect("messaging:messages_home")
 
     from messaging.utils.infobip import _format_phone
